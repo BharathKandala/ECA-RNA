@@ -1,0 +1,94 @@
+name: CiscoPingDevice
+platform: node
+blocks:
+  - name: A2
+    action: try
+    try:
+      - name: PingTargetIPAddress
+        action: system/Napalm/ping
+        inputs:
+          - name: authKey
+            value: admin/Napalm
+          - name: destination
+            value: $DeviceAddressToPing
+      - name: RTT_MIN_TimeInMS
+        action: assign
+        variable: $rtt_min
+        value: $PingTargetIPAddress.result.success.rtt_min
+      - name: RTT_MAX_TimeInMS
+        action: assign
+        variable: $rtt_max
+        value: $PingTargetIPAddress.result.success.rtt_max
+      - name: RTT_AVG_TimeInMS
+        action: assign
+        variable: $rtt_avg
+        value: $PingTargetIPAddress.result.success.rtt_avg
+      - action: comment
+        value: Rounds to the nearest day
+    catch:
+      - name: A3
+        action: assign
+        variable: $errorMessage
+        value: $A2.message
+variables:
+  - name: errorMessage
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: DeviceAddressToPing
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"devnetsandboxiosxe.cisco.com"'
+  - name: rtt_max
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: rtt_min
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: rtt_avg
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: RouterAuth
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+meta:
+  version: 5
+  description: Pings a specified IP Address from the source router
+  workerGroup: default
+  layout: flow

@@ -1,0 +1,30 @@
+name: AWS_authkey_example
+platform: node
+blocks:
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: "\"Hello, World!\""
+  - action: system/AWS/ec2/DescribeInstances
+    name: AWS_1
+    inputs:
+      - name: authKey
+        value: '"admin/AWS_EC2_Readonly"'
+      - name: region
+        value: '"ap-east-1"'
+      - name: body
+        value: "{}"
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  description: Example of auth key
+  layout: flat
+  workerGroup: default

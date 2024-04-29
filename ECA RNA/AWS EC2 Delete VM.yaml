@@ -1,0 +1,97 @@
+name: AWS EC2 Delete VM
+platform: node
+blocks:
+  - action: comment
+    value: |-
+      This workflow uses EXACT Match
+      Pay attention to upper/lower casing
+  - action: comment
+    value: Pulls down an array of a regions instances
+  - name: AWS_Instances
+    action: system/AWS/ec2/DescribeInstances
+    inputs:
+      - name: authKey
+        value: $AWS_AuthKey
+      - name: region
+        value: $AWS_Region
+      - name: body
+        value: "{}"
+  - name: Each_Instance
+    action: foreach
+    list: $AWS_Instances.result.Reservations
+    blocks:
+      - name: Try_again
+        action: try
+        try:
+          - action: comment
+            value: Looks to see if the VM Username matches and deletes if it does.
+          - name: Name_match
+            action: if
+            condition: |-
+              $Each_Instance.item.Instances[0].Tags[0].Key.includes('Name') &&
+              $Each_Instance.item.Instances[0].Tags[0].Value == $name_to_delete
+            then:
+              - name: Terminate_instance
+                action: system/AWS/ec2/TerminateInstances
+                inputs:
+                  - name: authKey
+                    value: $AWS_AuthKey
+                  - name: region
+                    value: $AWS_Region
+                  - name: body
+                    value: |-
+                      {
+                          "InstanceIds": [$Each_Instance.item.Instances[0].InstanceId]
+                      }
+              - name: Instance_terminated_result
+                action: assign
+                variable: $result
+                value: "\"ID of Instance deleted: \" + $Each_Instance.item.Instances[0].InstanceId"
+            else: []
+        catch: []
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: array
+    value: "[]"
+  - name: name_to_delete
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"teaser_1658862181488"'
+    meta:
+      description: Username tied to the VM instance (Will not work with wildcards)
+        Exact Match
+  - name: AWS_Region
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"us-east-1"'
+    meta:
+      description: Declares the region to look for the VM
+  - name: AWS_AuthKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"demo/AWS_Console_Admin_Production"'
+    meta:
+      description: AWS authKey
+meta:
+  version: 5
+  description: Deletes AWS Virtual Machine by keyword. Use as specific of a keyword
+    as possible to avoid disaster.
+  workerGroup: default
+  layout: flat

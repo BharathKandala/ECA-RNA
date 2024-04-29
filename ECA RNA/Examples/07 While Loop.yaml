@@ -1,0 +1,57 @@
+name: 07 While Loop
+platform: node
+blocks:
+  - action: comment
+    value: We want this while loop to keep running as long as the value of $counter
+      is less than 10
+  - name: While_1
+    action: while
+    condition: $counter < $total_count
+    blocks:
+      - action: comment
+        value: Increment the value of $counter by 1
+      - name: Assign_1
+        action: assign
+        variable: $counter
+        value: $counter + 1
+      - action: comment
+        value: Push a status message into the $result array
+      - name: ArrayPush_1
+        action: system/Common/Array/ArrayPush
+        inputs:
+          - name: array
+            value: $result
+          - name: item
+            value: '"Iteration " + $counter '
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: array
+    value: "[]"
+  - name: counter
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "0"
+  - name: total_count
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "8"
+meta:
+  version: 5
+  layout: flat
+  description: "A while loop will execute until a given condition evaluates to false\n\
+    \nUse these when you do not know how many times you need to execute a loop, but\
+    \ you know when you would like it to stop. "
+  workerGroup: default

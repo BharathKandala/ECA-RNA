@@ -1,0 +1,37 @@
+name: Cisco-IOXSE
+platform: node
+blocks:
+  - action: system/Common/SSH
+    name: SSH_1
+    inputs:
+      - name: authKey
+        value: '"admin/CISCO-IOSXE-SSH"'
+      - name: command
+        value: '`show iox-service`'
+      - name: connectionPool
+        value: "true"
+      - name: host
+        value: '"devnetsandboxiosxe.cisco.com"'
+      - name: port
+        value: "22"
+      - name: username
+        value: '"admin"'
+      - name: password
+        value: '"C1sco12345"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $SSH_1
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flat
+  workerGroup: default

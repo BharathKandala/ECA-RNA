@@ -1,0 +1,34 @@
+name: Napalm
+platform: node
+blocks:
+  - action: system/Napalm/execute_cli_command
+    name: Napalm_1
+    inputs:
+      - name: authKey
+        value: '"admin/Napalm-IntraNet"'
+      - name: command
+        value: '"show interfaces"'
+      - name: jumpHost
+        value: |-
+          {
+              "host": "devnetsandbox-usw1-reservation.cisco.com:20224",
+              "username": "eca.ansi",
+              "password": "-YjU2x72NXht-"
+          }
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $Napalm_1
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

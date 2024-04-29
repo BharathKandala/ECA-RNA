@@ -1,0 +1,31 @@
+name: Get_Hosts_Count_For_Network
+platform: node
+blocks:
+  - name: Assign_1
+    action: assign
+    variable: $result
+    value: "Math.pow(2, (32 - Number($Network.split('/')[1]))) - 2"
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"number\"}"
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+  - name: Network
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"192.168.109.0/24"'
+    isInput: true
+    isOutput: false
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: Takes a network in CIDR notation (192.168.109.0/24) and returns the
+    number of hosts possible in the network
+  layout: flat
+  workerGroup: default
+  customMET: false

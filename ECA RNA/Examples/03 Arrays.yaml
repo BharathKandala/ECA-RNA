@@ -1,0 +1,150 @@
+name: 03 Arrays
+platform: node
+blocks:
+  - action: comment
+    value: "This block will take an array and reverse the order of the elements. This\
+      \ operation is done to the given array, so there is no output. "
+  - name: ArrayReverse_1
+    action: system/Common/Array/ArrayReverse
+    inputs:
+      - name: array
+        value: $Starting_Array
+  - action: comment
+    value: "WARNING: Arrays are a special case and are not copied using assign blocks\
+      \ the way you would expect for a string or number. \n\nTo get a copy of a simple\
+      \ array, we have to use the special \"Array.from($Arrayname)\" method\nIf this\
+      \ was an array that was more complicated, we would have to use a different mechanism\
+      \ to copy it. "
+  - name: Assign_1
+    action: assign
+    variable: $Reversed_Array
+    value: Array.from($Starting_Array)
+  - action: comment
+    value: Put the array back to its original order by using another ArrayReverse
+      block on it
+  - name: ArrayReverse_2
+    action: system/Common/Array/ArrayReverse
+    inputs:
+      - name: array
+        value: $Starting_Array
+  - action: comment
+    value: "We can use the ArrayJoin block to convert the array to a single string,\
+      \ where each element is separated by a given character. In this case we will\
+      \ use a comma ','"
+  - name: ArrayJoin_1
+    action: system/Common/Array/ArrayJoin
+    inputs:
+      - name: array
+        value: $Starting_Array
+      - name: separator
+        value: "','"
+  - action: comment
+    value: Assign the resulting string to our $Array_Joined_into_String out put variable
+      so that we can see the value when the flow execution completes
+  - name: Assign_2
+    action: assign
+    variable: $Array_Joined_into_String
+    value: $ArrayJoin_1.result
+  - action: comment
+    value: "Using a ForEach loop, we will create a string from each array index and\
+      \ item, then add each new string into the $result array as a new array element\
+      \ using the ArrayPush block"
+  - action: comment
+    value: "The foreach loop will run once for each element in the given array. Click\
+      \ the chevron in the block to see the output variables. \n\n $ForEach_1.index\
+      \ - The numerical index of the current element, starting from zero (0)\n$ForEach_1.item\
+      \ - This property will always reference the current array element \n$ForEach_1.break\
+      \ (do not use this property)\n$ForEach_1.count - This is the total number of\
+      \ elements\n$ForEach_1.isLast - This will equal true if the current element\
+      \ is the last one in the source array\n$ForEach_1.isFirst - This will equal\
+      \ true if the current element is the first one in the source array "
+  - name: ForEach_1
+    action: foreach
+    list: $Starting_Array
+    blocks:
+      - action: comment
+        value: Strings and variables can be concatenated together in Pliant using
+          the '+' operator. Literal strings are always in quotation marks
+      - name: ArrayPush_1
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $result
+          - name: item
+            value: '"The value of array element at index " + $ForEach_1.index + "
+              is " + $ForEach_1.item'
+  - action: comment
+    value: Arrays always have a "length" property that will tell you how many elements
+      are in the array
+  - name: Assign_3
+    action: assign
+    variable: $Array_Length
+    value: $Starting_Array.length
+  - action: comment
+    value: "To reference an element directly, use square brackets"
+  - name: Assign_4
+    action: assign
+    variable: $Element_3
+    value: "$Starting_Array[3]"
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"array\"}"
+    value: "[]"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Starting_Array
+    level: INTERMEDIATE
+    type: "{\"type\": \"array\"}"
+    value: "[1,2,3,\"Four\",\"Five\",\"Six\"]"
+    isInput: true
+    isOutput: true
+    required: true
+    meta: null
+  - name: Reversed_Array
+    level: INTERMEDIATE
+    type: "{\"type\": \"array\"}"
+    value: "[]"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Array_Joined_into_String
+    level: INTERMEDIATE
+    type: "{\"type\": \"array\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Array_Length
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Element_3
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+meta:
+  version: 5
+  description: |-
+    This workflow shows an example of a few common array functions and how arrays can be used and manipulated in Pliant
+
+    ArrayReverse
+    ArrayJoin
+    ForEach
+
+    Arrays are used anywhere you have a batch or set to work with
+  layout: flat
+  workerGroup: default
+  customMET: false

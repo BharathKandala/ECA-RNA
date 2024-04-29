@@ -1,0 +1,25 @@
+name: Calls_Hello_World
+platform: node
+blocks:
+  - action: ./Hello_World
+    name: User_1
+    inputs:
+      - name: repeatText
+        value: '"helloooo"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $User_1.result
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flat
+  workerGroup: default

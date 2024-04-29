@@ -1,0 +1,59 @@
+name: AzureVM_automate
+platform: node
+blocks:
+  - action: system/Azure/Compute/VirtualMachines/VirtualMachines_CreateOrUpdate
+    name: AzureVM_Create
+    inputs:
+      - name: authKey
+        value: '"admin/Azure-Auth"'
+      - name: resourceGroupName
+        value: '"Ansible_POC"'
+      - name: vmName
+        value: '"TestVM"'
+      - name: parameters
+        value: |-
+          {
+              "properties": {
+                  "hardwareProfile": {
+                      "vmSize": "Standard_A2_v2"
+                  },
+                  "storageProfile": {
+                      "imageReference": {
+                          "publisher": "MicrosoftWindowsServer",
+                          "offer": "WindowsServer",
+                          "sku": "2019-Datacenter",
+                          "version": "latest"
+                      },
+                      "osDisk": {
+                          "managedDisk": {
+                              "storageAccountType": "Premium_LRS"
+                          },
+                          "createOption": "FromImage"
+                      }
+                  },
+                  "osProfile": {
+                      "computerName": "TestVM",
+                      "adminUsername": "azureuser",
+                      "adminPassword": "password"
+                  }
+              }
+          }
+      - name: subscriptionId
+        value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: "\"Hello, World!\""
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flat
+  workerGroup: default

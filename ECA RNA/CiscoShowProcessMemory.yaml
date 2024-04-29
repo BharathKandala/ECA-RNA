@@ -1,0 +1,102 @@
+name: CiscoShowProcessMemory
+platform: node
+blocks:
+  - name: A5
+    action: try
+    try:
+      - name: ShowMemory
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: command
+            value: '"show process memory sorted"'
+      - name: parse
+        action: ./textfsm_cisco_ios_show_process_memory_sorted
+      - name: ParseOutput
+        action: system/Common/TextFsmParse
+        inputs:
+          - name: template
+            value: $parse.output
+          - name: text_data
+            value: $ShowMemory.result
+      - name: A9
+        action: assign
+        variable: $MEMORY_TOTAL
+        value: "$ParseOutput.result[0].MEMORY_TOTAL "
+      - name: A1
+        action: assign
+        variable: $MEMORY_FREE
+        value: "$ParseOutput.result[0].MEMORY_FREE"
+      - name: A2
+        action: assign
+        variable: $MEMORY_USED
+        value: "$ParseOutput.result[0].MEMORY_USED"
+      - name: A3
+        action: assign
+        variable: $PercentMemoryFree
+        value: "(parseInt($MEMORY_FREE, 10) / parseInt($MEMORY_TOTAL, 10)) * 100"
+    catch: []
+variables:
+  - name: showProcMem
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: MEMORY_TOTAL
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: MEMORY_USED
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: MEMORY_FREE
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: PercentMemoryFree
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: RouterAuth
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+meta:
+  version: 5
+  description: "This flow returns TOTAL MEMORY, USED MEMORY, FREE MEMORY and the percentage\
+    \ of free memory from an Cisco IOS or IOS XE device."
+  workerGroup: default
+  layout: flow

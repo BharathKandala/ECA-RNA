@@ -1,0 +1,36 @@
+name: 01 Hello_World
+platform: node
+blocks:
+  - name: A1
+    action: assign
+    variable: $result
+    value: $Display_Text
+  - action: comment
+    value: |-
+      In a programming language, the Assign block would be represented by an "=" sign. So the above block would be:
+
+      $result = $Display_Text
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Display_Text
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"Hello World"'
+meta:
+  version: 5
+  layout: flat
+  description: |-
+    This workflow shows an example of value to variable assignment in Pliant. The flow has an output variable called "result" (referenced within the flow as $result). Output variables are returned at the end of the flow execution. There is an input variable called "Display_Text" (referenced within the flow as $Display_Text) that starts with a default value of "Hello World"
+    The flow has a single assign block, which takes the value of the $Display_Text variable and assigns it to the $result variable.
+  workerGroup: default

@@ -1,0 +1,83 @@
+name: 04 Objects
+platform: node
+blocks:
+  - action: comment
+    value: 'We assign the $legcount variable with the value of the leg_count property
+      of the $Table object. '
+  - name: Assign_1
+    action: assign
+    variable: $legcount
+    value: $Table.leg_count
+  - action: comment
+    value: Change the height of the table from 50cm to 100cm by assigning a new value
+      to the height property of the table object
+  - name: Assign_2
+    action: assign
+    variable: $Table.height
+    value: '"100cm"'
+  - action: comment
+    value: We will assign the whole $Table object to be the value of a new "table"
+      property in the Room object. The new property is created and set at the same
+      time.
+  - name: Assign_3
+    action: assign
+    variable: $Room.table
+    value: $Table
+  - action: comment
+    value: "When objects are embedded within each other, we use dot notation to reference\
+      \ a property of a property or an object. "
+  - name: Assign_4
+    action: assign
+    variable: $Material
+    value: $Room.table.material
+  - action: comment
+    value: "We can also use bracket notation instead of dot notation to reference\
+      \ object properties. Here we add a \"stuffing\" property to the couch object\
+      \ inside the room object, and set the value to \"Foam\""
+  - name: Assign_5
+    action: assign
+    variable: "$Room[\"couch\"][\"stuffing\"]"
+    value: '"Foam"'
+variables:
+  - name: Room
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "{\"couch\":{}}"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Table
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "{\"material\":\"Oak wood\",\"leg_count\":4,\"height\":\"50cm\"}"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: legcount
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Material
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+meta:
+  version: 5
+  layout: flat
+  description: "This flow is to illustrate how objects can be created, referenced,\
+    \ and manipulated in Pliant\n\nObjects are represented using JSON syntax. An object\
+    \ can have multiple named properties, and each property can be a value of any\
+    \ type, including an array or another object. \n\nIn this flow, we consider an\
+    \ example object as a table (furniture, not database) and its properties"
+  workerGroup: default
+  customMET: false

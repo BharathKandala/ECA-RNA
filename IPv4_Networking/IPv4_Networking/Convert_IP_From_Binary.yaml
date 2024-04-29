@@ -1,0 +1,96 @@
+name: Convert_IP_From_Binary
+platform: node
+blocks:
+  - name: foreach_octet
+    action: foreach
+    list: Array(4)
+    blocks:
+      - name: A6
+        action: assign
+        variable: $temp
+        value: '""'
+      - name: A2
+        action: foreach
+        list: Array(8)
+        blocks:
+          - name: A9
+            action: if
+            condition: $Bits_Array.length > 0
+            then:
+              - name: A3
+                action: system/Common/ArrayPop
+                inputs:
+                  - name: array
+                    value: $Bits_Array
+              - name: A1
+                action: assign
+                variable: $temp
+                value: $A3.result + $temp
+            else:
+              - name: A10
+                action: assign
+                variable: $temp
+                value: '"0" + $temp'
+      - name: A7
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $decimal_array
+          - name: item
+            value: "parseInt($temp, 2)"
+  - name: A5
+    action: system/Common/Array/ArrayReverse
+    inputs:
+      - name: array
+        value: $decimal_array
+  - name: A8
+    action: system/Common/Array/ArrayJoin
+    inputs:
+      - name: array
+        value: '$A5.array '
+      - name: separator
+        value: '''.'''
+  - name: A4
+    action: assign
+    variable: $result
+    value: '$A8.result '
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+  - name: Bits_Array
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "[\"0\",\"0\",\"0\",\"0\",\"1\",\"0\",\"1\",\"0\",\"1\",\"0\",\"0\",\"\
+      0\",\"0\",\"0\",\"0\",\"1\",\"0\",\"0\",\"0\",\"0\",\"0\",\"0\",\"1\",\"0\"\
+      ,\"0\",\"0\",\"0\",\"0\",\"0\",\"0\",\"0\",\"0\"]"
+    isInput: true
+    isOutput: false
+    required: true
+    meta: {}
+  - name: temp
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: false
+    required: true
+    meta: {}
+  - name: decimal_array
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "[]"
+    isInput: false
+    isOutput: false
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: Converts an array of bits into a dotted decimal IP address
+  workerGroup: default
+  customMET: false

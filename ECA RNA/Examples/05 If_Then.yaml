@@ -1,0 +1,191 @@
+name: 05 If_Then
+platform: node
+blocks:
+  - action: comment
+    value: "The If block evaluates the expression provided in the Condition parameter.\
+      \ If the condition evaluates to true, then the blocks between If and Else are\
+      \ executed, if the condition evaluates to false, the blocks between Else and\
+      \ End If are executed."
+  - action: comment
+    value: "In this case, our condition is a variable that is set to the boolean value\
+      \ 'true', so the first actions will happen and the else will be ignored. "
+  - name: If_1
+    action: if
+    condition: $This_is_True
+    then:
+      - name: ArrayPush_1
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was true"'
+    else:
+      - name: ArrayPush_2
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was false"'
+  - action: comment
+    value: "In this example, the condition is evaluating the numerical value of the\
+      \ variable against a given number. You can change the value of the $A_number\
+      \ variable in the Start block and observer the differences in behavior."
+  - name: If_2
+    action: if
+    condition: $A_number > 5
+    then:
+      - name: ArrayPush_3
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was true. The number was greater than 5"'
+    else:
+      - name: ArrayPush_4
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was false. The number was less than 5"'
+  - action: comment
+    value: "Pliant allows users to leverage a number of JavaScript methods inline\
+      \ in their expressions. In this case, we are using the string method \"includes()\"\
+      , which will return true if the string within the parentheses is contained within\
+      \ the string $Sentence."
+  - name: If_3
+    action: if
+    condition: $Sentence.includes("automation")
+    then:
+      - name: ArrayPush_5
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was true. The sentence includes the string
+              ''automation''"'
+    else:
+      - name: ArrayPush_6
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was false. The sentence does not include
+              the string ''automation''"'
+  - action: comment
+    value: "The \"==\" operator will compare if two expressions are the same.\nBe\
+      \ careful to remember that \"==\" must be used for comparison, and single equal\
+      \ sign '=' is used for assignment. "
+  - name: If_4
+    action: if
+    condition: $word1 == $word2
+    then:
+      - name: ArrayPush_7
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was true. $word1 and $word2 are the same"'
+    else:
+      - name: ArrayPush_8
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was false. $word1 and $word2 are not the
+              same"'
+  - name: If_5
+    action: if
+    condition: $word1 == $word3
+    then:
+      - name: ArrayPush_9
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was true. $word1 and $word3 are the same"'
+    else:
+      - name: ArrayPush_10
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $results
+          - name: item
+            value: '"The input expression was false. $word1 and $word3 are not the
+              same"'
+variables:
+  - name: This_is_True
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "true"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: A_number
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "7"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: Sentence
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"Pliant is the way we automate the world."'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: results
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "[]"
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: word1
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"parakeet"'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: word2
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"parakeet"'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: word3
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"pidgeon"'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+meta:
+  version: 5
+  layout: flat
+  description: |-
+    This flow illustrates the use of If..Then statements in Pliant, along with some expression syntax.
+
+    If..Then statements are for when your workflow needs to make a decision while it is executing
+
+    We will use an array to capture data as this flow executes, and use If..Then blocks to determine what strings we push into the array
+  workerGroup: default
+  customMET: false

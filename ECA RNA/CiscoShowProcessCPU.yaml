@@ -1,0 +1,64 @@
+name: CiscoShowProcessCPU
+platform: node
+blocks:
+  - name: A1
+    action: try
+    try:
+      - name: ShowRouterCommand
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: command
+            value: '"show process cpu"'
+          - name: timeout
+            value: ""
+          - name: jumpHost
+            value: ""
+      - name: parse
+        action: ./textfsm_cisco_ios_show_processes_cpu
+        inputs: []
+      - name: ParseOutput
+        action: system/Common/TextFsmParse
+        inputs:
+          - name: template
+            value: $parse.output
+          - name: text_data
+            value: $ShowRouterCommand.result
+      - name: CPUValueVar
+        action: assign
+        variable: $cpuFiveMinuteAverage
+        value: "Number($ParseOutput.result[0].CPU_5_MIN)"
+    catch: []
+variables:
+  - name: cpuFiveMinuteAverage
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: RouterAuth
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+    isInput: true
+    isOutput: false
+    required: true
+    meta: null
+meta:
+  version: 5
+  description: 'This flow returns CPU Utilization '
+  workerGroup: default
+  layout: flow

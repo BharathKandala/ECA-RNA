@@ -1,0 +1,85 @@
+name: CiscoUptime
+platform: node
+blocks:
+  - name: A2
+    action: try
+    try:
+      - name: GetVersionInfo
+        action: system/Napalm/get_facts
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+      - name: A1
+        action: assign
+        variable: $tmp
+        value: ((($GetVersionInfo.result.uptime / 60) / 60) /24)
+      - action: comment
+        value: Rounds to the nearest day
+      - name: A4
+        action: assign
+        variable: $uptimeInDays
+        value: Math.round($tmp)
+      - name: A5
+        action: assign
+        variable: $Host
+        value: $RouterAuth.ipAddress
+    catch:
+      - name: A3
+        action: assign
+        variable: $errorMessage
+        value: $A2.message
+variables:
+  - name: errorMessage
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: tmp
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "0"
+  - name: RouterAuth
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: object
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.126",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco",
+          "secret":"cisco"
+      }
+  - name: Host
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: uptimeInDays
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+meta:
+  version: 5
+  description: This flow returns the uptime of the Cisco device in days.
+  workerGroup: default
+  layout: flat

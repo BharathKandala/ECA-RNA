@@ -1,0 +1,64 @@
+name: AWS EC2 List VMs
+platform: node
+blocks:
+  - name: listInstances
+    action: system/AWS/ec2/DescribeInstances
+    inputs:
+      - name: authKey
+        value: $AWS_AuthKey
+      - name: region
+        value: $AWS_region
+      - name: body
+        value: "{}"
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $listInstances
+  - name: eachReservation
+    action: foreach
+    list: $listInstances.result.Reservations
+    blocks:
+      - name: Array_results
+        action: system/Common/ArrayPush
+        inputs:
+          - name: array
+            value: $result
+          - name: item
+            value: "$eachReservation.item.Instances[0]"
+    skipped: true
+variables:
+  - name: AWS_AuthKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"AKIAWFVML544IX4IAIWW/hVI+Ey6RcfTT57DQS8EREKHwqtN4+7O0msq3ztqo"'
+    meta:
+      description: authKey for AWS
+  - name: AWS_region
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"us-east-2b"'
+    meta:
+      description: Used to define the data set to be looked at by region
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: array
+    value: "[]"
+    meta:
+      description: returns the list of instances inside a region
+meta:
+  version: 5
+  description: List VMs in AWS
+  workerGroup: default
+  layout: flat

@@ -1,0 +1,62 @@
+name: AzureVMStart
+platform: node
+blocks:
+  - action: system/Azure/Compute/VirtualMachines/VirtualMachines_PowerOff
+    name: Azure_1
+    inputs:
+      - name: authKey
+        value: '"admin/Azure-Auth"'
+      - name: resourceGroupName
+        value: '"Ansible_POC"'
+      - name: vmName
+        value: $vmName
+      - name: subscriptionId
+        value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $Azure_1
+  - action: system/Azure/Compute/VirtualMachines/VirtualMachines_InstanceView
+    name: Azure_2
+    inputs:
+      - name: authKey
+        value: '"admin/Azure-Auth"'
+      - name: resourceGroupName
+        value: '"Ansible_POC"'
+      - name: vmName
+        value: $vmName
+      - name: subscriptionId
+        value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+  - action: assign
+    name: Assign_1_1
+    variable: $vmStatus
+    value: $Azure_2
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+  - name: vmName
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: vmStatus
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

@@ -1,0 +1,27 @@
+name: textfsm_cisco_ios_show_process_memory_sorted
+platform: node
+blocks:
+  - name: cisco_ios_show_process_memory_sorted
+    action: system/Common/String/StringBase64Decode
+    inputs:
+      - name: str
+        value: '"VmFsdWUgTUVNT1JZX1RPVEFMIChcZCspClZhbHVlIE1FTU9SWV9VU0VEIChcZCspClZhbHVlIE1FTU9SWV9GUkVFIChcZCspCgpTdGFydAogXlByb2Nlc3NvclxzK1Bvb2xccytUb3RhbDpccyske01FTU9SWV9UT1RBTH1ccytVc2VkOlxzKyR7TUVNT1JZX1VTRUR9XHMrRnJlZTpccyske01FTU9SWV9GUkVFfQ=="'
+  - name: A1
+    action: assign
+    variable: $output
+    value: $cisco_ios_show_process_memory_sorted.result
+variables:
+  - name: output
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: "This is the textFSM template cisco_ios_show_processes_memory_sorted.textfsm\
+    \ from: https://github.com/dhegenba/textfsm/blob/master/templates/cisco_ios_show_processes_memory_sorted.textfsm"
+  customMET: false
+  workerGroup: default

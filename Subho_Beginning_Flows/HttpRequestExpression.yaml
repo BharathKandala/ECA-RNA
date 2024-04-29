@@ -1,0 +1,31 @@
+name: HttpRequestExpression
+platform: node
+blocks:
+  - action: system/Common/HttpRequest
+    name: HttpRequest_1
+    inputs:
+      - name: method
+        value: '"GET"'
+      - name: host
+        value: '"http://www.herokucdn.com/random.json"'
+      - name: protocol
+        value: '"http"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: "\"Status Code Returned: \" + $HttpRequest_1.statusCode + \"\\n Returned\
+      \ Value: \" + $HttpRequest_1.result"
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flat
+  workerGroup: default
+  description: Calls HttpRequest GET

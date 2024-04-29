@@ -1,0 +1,102 @@
+name: CiscoShowInventory
+platform: node
+blocks:
+  - name: ErrorGettingTemplate
+    action: try
+    try:
+      - name: ShowInventory
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: command
+            value: '"show inventory"'
+          - name: timeout
+            value: ""
+          - name: jumpHost
+            value: ""
+      - name: parse
+        action: ./textfsm_cisco_ios_show_ip_inventory
+        inputs: []
+      - name: ParseOutput
+        action: system/Common/TextFsmParse
+        inputs:
+          - name: template
+            value: $parse.output
+          - name: text_data
+            value: $ShowInventory.result
+      - name: InventoryItems
+        action: assign
+        variable: $routerInventory
+        value: $ParseOutput.result
+      - name: LoopThruInventoryItems
+        action: foreach
+        list: $routerInventory
+        blocks:
+          - name: A2
+            action: if
+            condition: $LoopThruInventoryItems.item.NAME == "Chassis" || $LoopThruInventoryItems.item.NAME
+              == "1"
+            then:
+              - name: A1
+                action: assign
+                variable: $routerSerialNumber
+                value: $LoopThruInventoryItems.item.SN
+              - name: A3
+                action: assign
+                variable: $routerPartNumber
+                value: $LoopThruInventoryItems.item.PID
+            else: []
+    catch: []
+variables:
+  - name: routerInventory
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: routerPartNumber
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: routerSerialNumber
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: RouterAuth
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+    isInput: true
+    isOutput: false
+    required: true
+    meta:
+      notLogged: true
+meta:
+  version: 5
+  description: This flow returns parsed output of the "show inventory" command - specifically
+    the part number of the device and the serial number of the device.
+  workerGroup: default
+  layout: flow

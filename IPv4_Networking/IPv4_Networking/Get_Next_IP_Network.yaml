@@ -1,0 +1,109 @@
+name: Get_Next_IP_Network
+platform: node
+blocks:
+  - name: foreach_network
+    action: foreach
+    list: $Network_CIDR_Array
+    blocks:
+      - name: get_ip_from_cidr_range
+        action: system/Common/String/StringSplit
+        inputs:
+          - name: str
+            value: $foreach_network.item
+          - name: separator
+            value: '''/'''
+          - name: len
+            value: ""
+      - action: comment
+        value: Is the IP valid?
+      - name: A2
+        action: if
+        condition: "/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\\
+          .(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test($get_ip_from_cidr_range.result[0])"
+        then:
+          - action: comment
+            value: |-
+              Is the CIDR valid?
+              We only handle /24s for now
+          - name: A1
+            action: if
+            condition: "$get_ip_from_cidr_range.result[1] == 24"
+            then:
+              - name: A3
+                action: if
+                condition: "$max_octet < $get_ip_from_cidr_range.result[0].split('.')[2]"
+                then:
+                  - name: A4
+                    action: assign
+                    variable: $max_octet
+                    value: "$get_ip_from_cidr_range.result[0].split('.')[2]"
+                  - name: A5
+                    action: assign
+                    variable: $first_octets
+                    value: "$get_ip_from_cidr_range.result[0].split('.')[0] + '.'\
+                      \ + $get_ip_from_cidr_range.result[0].split('.')[1]"
+                else: []
+            else:
+              - name: _A10
+                action: throw
+                error: '"Bad CIDR mask in network " + $foreach_network.item'
+        else:
+          - name: _A11
+            action: throw
+            error: '"Bad IP in network " + $foreach_network.item'
+  - name: A7
+    action: assign
+    variable: $max_octet
+    value: Number($max_octet) + 1
+  - name: A6
+    action: assign
+    variable: $result
+    value: $first_octets + '.' + $max_octet + '.0/' + $Network_Size
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+  - name: Network_CIDR_Array
+    level: INTERMEDIATE
+    type: "{\"type\": \"array\"}"
+    value: "['10.42.0.0/24', '10.42.1.0/24', '10.42.2.0/24']"
+    isInput: true
+    isOutput: false
+    required: true
+    meta: {}
+  - name: Network_Size
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"24"'
+    isInput: false
+    isOutput: false
+    required: true
+    meta: {}
+  - name: max_octet
+    level: INTERMEDIATE
+    type: "{\"type\": \"number\"}"
+    value: "0"
+    isInput: false
+    isOutput: false
+    required: true
+    meta: {}
+  - name: first_octets
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: false
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: "Finds the highest IP network in an array of /24 CIDR networks, then\
+    \ increments the third octet and returns the next /24 CIDR network"
+  workerGroup: default
+  customMET: false
+  layout: flat

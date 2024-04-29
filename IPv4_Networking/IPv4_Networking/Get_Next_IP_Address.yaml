@@ -1,0 +1,54 @@
+name: Get_Next_IP_Address
+platform: node
+blocks:
+  - name: convert_from_cidr
+    action: assign
+    variable: $Previous_IP
+    value: "$Previous_IP.split('/')[0]"
+  - name: A2
+    action: if
+    condition: "/^(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\\
+      .(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$/.test($Previous_IP)"
+    then:
+      - name: binary_ip
+        action: ./Convert_IP_To_Binary
+        inputs:
+          - name: Address
+            value: $Previous_IP
+      - name: A3
+        action: ./Convert_IP_From_Binary
+        inputs:
+          - name: Bits_Array
+            value: "(Number(parseInt($binary_ip.result.join(''), 2)) + 1 ).toString(2).split(\"\
+              \")"
+      - name: A6
+        action: assign
+        variable: $result
+        value: $A3.result
+    else:
+      - name: _A11
+        action: throw
+        error: '"Bad IP " + $Previous_IP'
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+  - name: Previous_IP
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '''10.42.3.2/24'''
+    isInput: true
+    isOutput: false
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: "Given an IP address, this flow increments it and returns the next\
+    \ IP address in the sequence"
+  workerGroup: default
+  customMET: false

@@ -1,0 +1,29 @@
+name: cidr_2_mask
+platform: node
+blocks:
+  - name: A1
+    function: "let bitCount = $Bits;\r\n  var mask=[];\r\n  for(var i=0;i<4;i++) {\r\
+      \n    var n = Math.min(bitCount, 8);\r\n    mask.push(256 - Math.pow(2, 8-n));\r\
+      \n    bitCount -= n;\r\n  }\r\n$result = mask.join('.');\r\n"
+variables:
+  - name: Bits
+    level: INTERMEDIATE
+    type: "{\"type\": \"number\"}"
+    value: "26"
+    isInput: true
+    isOutput: false
+    required: true
+    meta: {}
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: Converts a slash notation bit count into a dotted decimal subnet mask
+  workerGroup: default
+  customMET: false

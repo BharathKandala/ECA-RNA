@@ -1,0 +1,56 @@
+name: Expressions_Operators
+platform: node
+blocks:
+  - action: if
+    name: If_1
+    then:
+      - action: assign
+        name: Assign_if_true
+        variable: $result
+        value: "\"Science+Maths  \" + ($science +  parseInt($maths)) + \" above cut-off,\
+          \ so SELECTED!\""
+    else:
+      - action: assign
+        name: Assign_if_false
+        variable: $result
+        value: |
+          "Science+Maths  " + ($science +  parseInt($maths)) + " below cut-off, so NOT SELECTED!"
+    condition: $science + parseInt($maths) >= $cut_off
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+  - name: science
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "90"
+  - name: maths
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: "9"
+  - name: cut_off
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "180"
+meta:
+  version: 5
+  description: To test expressions and operators
+  layout: flat
+  workerGroup: default

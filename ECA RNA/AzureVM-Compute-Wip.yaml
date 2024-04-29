@@ -1,0 +1,207 @@
+name: AzureVM-Compute-Wip
+platform: node
+blocks:
+  - action: switch
+    name: SwitchCase_1
+    expression: $workflowType
+    cases:
+      - value: '"Start"'
+        blocks:
+          - action: system/Azure/Compute/VirtualMachines/VirtualMachines_Start
+            name: Azure_3
+            inputs:
+              - name: authKey
+                value: '"admin/Azure-Auth"'
+              - name: resourceGroupName
+                value: '"Ansible_PoC"'
+              - name: vmName
+                value: $usrVmName
+              - name: subscriptionId
+                value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+          - action: assign
+            name: Assign_1_3
+            variable: $result
+            value: $usrVmName +" VM Started"
+      - value: '"Stop"'
+        blocks:
+          - action: system/Azure/Compute/VirtualMachines/VirtualMachines_PowerOff
+            name: Azure_2
+            inputs:
+              - name: authKey
+                value: '"admin/Azure-Auth"'
+              - name: resourceGroupName
+                value: '"Ansible_PoC"'
+              - name: vmName
+                value: $usrVmName
+              - name: subscriptionId
+                value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+          - action: system/Common/JsonStringify
+            name: jsnVMPwrOff
+            inputs:
+              - name: object
+                value: $result + "Hi"
+          - action: system/Common/JsonParse
+            name: JsonParse_1
+            inputs:
+              - name: jsonString
+                value: $Azure_2
+            skipped: true
+          - action: assign
+            name: Assign_1_2
+            variable: $result
+            value: $jsnVMPwrOff
+          - action: assign
+            name: Assign_1_2_1
+            variable: $result
+            value: $Azure_2
+    default:
+      - action: system/Azure/Compute/VirtualMachines/VirtualMachines_ListAll
+        name: Azure_1
+        inputs:
+          - name: authKey
+            value: '"admin/Azure-Auth"'
+          - name: subscriptionId
+            value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+      - action: assign
+        name: Assign_1_1
+        variable: $result
+        value: $Azure_1
+  - action: system/ServiceNow/getRecords
+    name: ServiceNow_2
+    inputs:
+      - name: authKey
+        value: '"admin/Servicenow-auth"'
+      - name: tableName
+        value: '"incident"'
+      - name: query
+        value: '"number STARTSWITH"+$snIncidentNum'
+      - name: group_by
+        value: '"number"'
+    skipped: true
+  - action: system/ServiceNow/getTable
+    name: ServiceNow_3
+    inputs:
+      - name: authKey
+        value: '"admin/Servicenow-auth"'
+      - name: tableName
+        value: '"incident"'
+      - name: query
+        value: '"number STARTSWITH" + $snIncidentNum'
+    skipped: true
+  - action: system/ServiceNow/updateTable
+    name: ServiceNow_1
+    inputs:
+      - name: authKey
+        value: '"admin/Servicenow-auth"'
+      - name: tableName
+        value: '"incident"'
+      - name: sys_id
+        value: '"6e0e0cb647a98210a4285d0f536d4334"'
+      - name: input_display_value
+        value: '"From Pliant Done"'
+      - name: Table
+        value: |-
+          {
+              "comments": "Frm Pliant Done"
+          }
+    skipped: true
+  - action: assign
+    name: Assign_1_2_1_1
+    variable: $result
+    value: $ServiceNow_3
+    skipped: true
+  - action: assign
+    name: Assign_1_2_1_1_1
+    variable: $result
+    value: $ServiceNow_1
+    skipped: true
+  - action: system/Ansible/Tower/Job Templates/Job Templates Launch Create
+    name: Ansible_1
+    inputs:
+      - name: authKey
+        value: '"admin/AnsibleTower-auth"'
+      - name: id
+        value: '"117"'
+      - name: data
+        value: "{\"incident_num\": $snIncidentNum}"
+  - action: assign
+    name: Assign_1_2_1_2_2
+    variable: $result
+    value: $Ansible_1
+  - action: system/Common/cURL/cURL
+    name: cURL_1
+    inputs:
+      - name: command
+        value: "`curl -k --location --request POST 'https://150.239.166.49/api/v2/job_templates/117/launch/'--header\
+          \ 'Content-Type: application/json' --header 'Authorization: Basic YWRtaW46cGFzc3dvcmQ='\
+          \ --data-raw '{incident_num: $snIncidentNum}'`"
+    skipped: true
+  - action: assign
+    name: Assign_1_2_1_2_1
+    variable: $result
+    value: $cURL_1
+    skipped: true
+  - action: system/Common/HttpRequest
+    name: HttpRequest_1
+    inputs:
+      - name: method
+        value: '"POST"'
+      - name: host
+        value: '"150.239.166.49"'
+      - name: protocol
+        value: '"https"'
+      - name: path
+        value: '"/api/v2/job_templates/117/launch/"'
+      - name: headers
+        value: "{\"Content-Type\": \"application/json\"}"
+      - name: followRedirect
+        value: "true"
+      - name: rejectUnauthorized
+        value: "false"
+      - name: body
+        value: "{\"incident_num\": $snIncidentNum}"
+      - name: authKey
+        value: '"admin/AnsibleTower-http-auth"'
+    skipped: true
+  - action: assign
+    name: Assign_1_2_1_2
+    variable: $result
+    value: $HttpRequest_1
+    skipped: true
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+  - name: workflowType
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: usrVmName
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: snIncidentNum
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"INC0010016"'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

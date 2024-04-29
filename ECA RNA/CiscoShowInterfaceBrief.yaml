@@ -1,0 +1,65 @@
+name: CiscoShowInterfaceBrief
+platform: node
+blocks:
+  - name: ErrorGettingTemplate
+    action: try
+    try:
+      - name: ShowInventory
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: command
+            value: '"show ip interface brief"'
+          - name: timeout
+            value: ""
+          - name: jumpHost
+            value: ""
+      - name: parse
+        action: ./textfsm_cisco_ios_show_ip_interface_brief
+        inputs: []
+      - name: ParseOutput
+        action: system/Common/TextFsmParse
+        inputs:
+          - name: template
+            value: $parse.output
+          - name: text_data
+            value: $ShowInventory.result
+      - name: InterfaceItems
+        action: assign
+        variable: $routerInterfaces
+        value: $ParseOutput.result
+    catch: []
+variables:
+  - name: routerInterfaces
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: RouterAuth
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+    isInput: true
+    isOutput: false
+    required: true
+    meta:
+      notLogged: true
+meta:
+  version: 5
+  description: This flow returns parsed output of the "show ip interface brief" command.
+  workerGroup: default
+  layout: flow

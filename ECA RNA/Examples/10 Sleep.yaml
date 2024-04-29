@@ -1,0 +1,92 @@
+name: 10 Sleep
+platform: node
+blocks:
+  - action: comment
+    value: Sleep blocks can make your flow wait for a given number of seconds
+  - name: Sleep_1
+    action: system/Common/Sleep
+    inputs:
+      - name: seconds
+        value: "30"
+  - action: comment
+    value: "Or just part of a second, represented by a decimal number"
+  - name: Sleep_2
+    action: system/Common/Sleep
+    inputs:
+      - name: seconds
+        value: ".25"
+  - action: comment
+    value: 'Here''s how we could do a loop to wait for a certain condition but only
+      for a certain $max_wait amount of time '
+  - action: comment
+    value: Get the time we're starting
+  - name: Wait_Loop_Start
+    action: system/Common/DateTime/Timestamp Now
+    inputs: []
+  - action: comment
+    value: Begin a while loop that will repeat until the $checked_condition_expression
+      is true
+  - name: While_1
+    action: while
+    condition: '!$checked_condition_expression'
+    blocks:
+      - action: comment
+        value: Perform actions here to update your expression that you check above
+      - action: comment
+        value: Get the timestamp for the current loop iteration
+      - name: TimestampNow_1
+        action: system/Common/DateTime/Timestamp Now
+        inputs: []
+      - action: comment
+        value: "If we've exceeded the max wait time, then break the loop"
+      - name: If_1
+        action: if
+        condition: $TimestampNow_1.result - $Wait_Loop_Start.result > $max_wait
+        then:
+          - action: break
+        else: []
+      - action: comment
+        value: Wait a while before we try again
+      - name: Sleep_3
+        action: system/Common/Sleep
+        inputs:
+          - name: seconds
+            value: "5"
+  - name: Assign_1
+    action: assign
+    variable: $result
+    value: '"I sure was tired!"'
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"any\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: max_wait
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "60"
+    isInput: true
+    isOutput: false
+    required: true
+    meta: null
+  - name: checked_condition_expression
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "false"
+    isInput: false
+    isOutput: false
+    required: true
+    meta: null
+meta:
+  version: 5
+  description: |-
+    Sleep block and time functions - when your flows need to wait
+
+    We also have a number of Data/Time functions available
+  layout: flat
+  workerGroup: default
+  customMET: false

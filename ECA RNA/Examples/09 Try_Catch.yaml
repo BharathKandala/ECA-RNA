@@ -1,0 +1,48 @@
+name: 09 Try_Catch
+platform: node
+blocks:
+  - action: comment
+    value: 'An error in a block will typically stop the execution of the whole flow.
+      The Try block establishes a safe zone in which blocks can throw errors without
+      stopping the execution.  '
+  - name: Try_1
+    action: try
+    try:
+      - action: comment
+        value: We will use a Throw block to simulate a block having an exception and
+          throwing an error
+      - name: _Throw_1
+        action: throw
+        error: '"Things went wrong"'
+      - action: comment
+        value: 'The catch block provides a variable that will contain the message
+          and stack information of the error that was caught. '
+    catch: []
+  - action: comment
+    value: "We will assign the value of $Try_1 to the result \nThe OR operation \"\
+      ||\" is used in the case that there is no value for $Try_1 and will substitute\
+      \ the string on the right in that case."
+  - name: Assign_1
+    action: assign
+    variable: $result
+    value: $Try_1 || "Things are OK"
+  - action: comment
+    value: Note how this flow's completion behavior differs from the earlier flow
+      where we explored the Throw block. Experiment with the disable checkbox in the
+      flow block. How does the output change when the Throw block is disabled?
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"any\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+meta:
+  version: 5
+  layout: flat
+  description: "Things can co wrong in any kind of program, even in the low-code world.\
+    \ A Try-Catch can help you handle those unexpected exceptions"
+  workerGroup: default
+  customMET: false

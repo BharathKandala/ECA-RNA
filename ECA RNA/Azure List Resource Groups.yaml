@@ -1,0 +1,62 @@
+name: Azure List Resource Groups
+platform: node
+blocks:
+  - name: Azure_1
+    action: system/Azure/Resources/ResourceGroups/ResourceGroups_List
+    inputs:
+      - name: authKey
+        value: $Azure_authKey
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: Assign_1
+    action: assign
+    variable: $result
+    value: $Azure_1.result.value
+  - name: ArrayMap_1
+    action: system/Common/Array/ArrayMap
+    inputs:
+      - name: input
+        value: $Azure_1.result.value
+      - name: member
+        value: '"name"'
+  - name: Assign_2
+    action: assign
+    variable: $names
+    value: $ArrayMap_1.result
+variables:
+  - name: subscriptionId
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"3516ab07-768e-40b3-b838-f6dc20f3773b"'
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: names
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Azure_authKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"demo/AZURE"'
+meta:
+  version: 5
+  layout: flat
+  workerGroup: default

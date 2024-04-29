@@ -1,0 +1,58 @@
+name: 06 Exit and Throw
+platform: node
+blocks:
+  - action: comment
+    value: In this case we will evaluate the value of the $exit_status variable
+  - name: If_1
+    action: if
+    condition: $exit_status > 0
+    then:
+      - action: comment
+        value: This throw block will stop flow execution with a failure condition
+          and provide the value of the given "Error message" parameter.
+      - name: _Throw_1
+        action: throw
+        error: "\"Exit status: \" + $exit_status"
+    else:
+      - name: Assign_1
+        action: assign
+        variable: $result
+        value: "\"Exit status: \" + $exit_status"
+      - action: comment
+        value: 'The exit block will jump ahead to the end of the flow and complete
+          the flow successfully. '
+      - action: exit
+  - action: comment
+    value: "This assign block below will never be reached, as either of the two conditions\
+      \ above will always cause the flow to end before this point is reached. "
+  - name: Assign_2
+    action: assign
+    variable: $result
+    value: '"We reached the end of the flow"'
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"any\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: null
+  - name: exit_status
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: "1"
+    isInput: false
+    isOutput: false
+    required: true
+    meta: null
+meta:
+  version: 5
+  layout: flat
+  description: "There are two blocks you can use to make a flow complete before it\
+    \ reaches the end: Exit and Throw \n\nSet different values for the \"exit_status\"\
+    \ variable and see what happens (be sure to try 0)\n\nThis is useful if you have\
+    \ a way that your flow can finish early, or if you want it to stop working on\
+    \ a serious error."
+  workerGroup: default
+  customMET: false

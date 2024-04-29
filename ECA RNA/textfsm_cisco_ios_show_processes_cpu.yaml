@@ -1,0 +1,27 @@
+name: textfsm_cisco_ios_show_processes_cpu
+platform: node
+blocks:
+  - name: cisco_ios_show_processes_cpu
+    action: system/Common/String/StringBase64Decode
+    inputs:
+      - name: str
+        value: '"VmFsdWUgQ1BVXzVfU0VDIChcZCspClZhbHVlIENQVV8xX01JTiAoXGQrKQpWYWx1ZSBDUFVfNV9NSU4gKFxkKykKVmFsdWUgSU5URVJSVVBUUyAoXGQrKQoKU3RhcnQKICBeQ1BVIHV0aWxpemF0aW9uIGZvciBmaXZlIHNlY29uZHM6XFcrJHtDUFVfNV9TRUN9JS8ke0lOVEVSUlVQVFN9JTsgb25lIG1pbnV0ZTpcVyske0NQVV8xX01JTn0lOyBmaXZlIG1pbnV0ZXM6XFcrJHtDUFVfNV9NSU59JSAtPiBSZWNvcmQKICAjIENhcHR1cmUgdGltZS1zdGFtcCBpZiB2dHkgbGluZSBoYXMgY29tbWFuZCB0aW1lLXN0YW1waW5nIHR1cm5lZCBvbgogIF5Mb2FkXHMrZm9yXHMrCiAgXlRpbWVccytzb3VyY2Vccytpcwo="'
+  - name: A1
+    action: assign
+    variable: $output
+    value: $cisco_ios_show_processes_cpu.result
+variables:
+  - name: output
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: "This is the textFSM template cisco_ios_show_processes_cpu.textfsm\
+    \ from: https://github.com/dhegenba/textfsm/blob/master/templates/cisco_ios_show_processes_cpu.textfsm"
+  customMET: false
+  workerGroup: default

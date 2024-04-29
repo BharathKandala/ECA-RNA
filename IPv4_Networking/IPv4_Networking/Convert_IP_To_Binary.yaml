@@ -1,0 +1,59 @@
+name: Convert_IP_To_Binary
+platform: node
+blocks:
+  - name: foreach_octet
+    action: foreach
+    list: $Address.split('.')
+    blocks:
+      - name: A2
+        function: "let temp = $foreach_octet.item;\r\nvar binary = \"\";\r\nwhile(\
+          \ binary.length != 8 ) {\r\n    if(temp % 2 == 0) {\r\n        binary =\
+          \ \"0\" + binary;\r\n    } else {\r\n        binary = \"1\" + binary;\r\n\
+          \    }\r\n    temp = Math.floor(temp / 2);\r\n}\r\n$bin = String(binary);"
+      - name: A1
+        action: assign
+        variable: $result
+        value: $result + $bin
+  - name: A5
+    action: system/Common/String/StringSplit
+    inputs:
+      - name: str
+        value: $result
+      - name: separator
+        value: '""'
+      - name: len
+        value: ""
+  - name: A4
+    action: assign
+    variable: $result
+    value: $A5.result
+variables:
+  - name: result
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+  - name: Address
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '"10.129.2.0"'
+    isInput: true
+    isOutput: false
+    required: true
+    meta: {}
+  - name: bin
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: false
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: Converts a dotted decimal IP address or netmask to an array of bits
+  workerGroup: default
+  customMET: false

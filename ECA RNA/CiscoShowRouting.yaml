@@ -1,0 +1,375 @@
+name: CiscoShowRouting
+platform: node
+blocks:
+  - name: InstanciateRouteObject
+    action: assign
+    variable: $routeCountObject
+    value: |-
+      {
+          "Connected_Routes":0,
+          "Static_Routes":0,
+          "Eigrp_Routes":0,
+          "OSPF_Routes":0,
+          "BGP_Routes":0
+      }
+  - action: comment
+    value: Detect whether the device uses SSH or Telnet for connectivity.
+  - name: A2
+    action: try
+    try:
+      - name: ShowRoutes
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: command
+            value: '"show ip route"'
+          - name: timeout
+            value: ""
+          - name: jumpHost
+            value: ""
+      - name: parse
+        action: ./textfsm_cisco_ios_show_ip_route
+        inputs: []
+      - name: ParseRoutes
+        action: system/Common/TextFsmParse
+        inputs:
+          - name: template
+            value: $parse.output
+          - name: text_data
+            value: $ShowRoutes.result
+      - name: A4
+        action: assign
+        variable: $allRoutes
+        value: $ParseRoutes.result
+    catch:
+      - name: Try_1
+        action: try
+        try:
+          - name: Sleep_1
+            action: system/Common/Sleep
+            inputs:
+              - name: seconds
+                value: "10"
+          - name: ShowRoutes_2
+            action: system/Napalm/execute_cli_command
+            inputs:
+              - name: authKey
+                value: $RouterAuth
+              - name: command
+                value: '"show ip route"'
+              - name: timeout
+                value: ""
+              - name: jumpHost
+                value: ""
+          - name: parse_2
+            action: ./textfsm_cisco_ios_show_ip_route
+            inputs: []
+          - name: ParseRoutes_2
+            action: system/Common/TextFsmParse
+            inputs:
+              - name: template
+                value: $parse.output
+              - name: text_data
+                value: $ShowRoutes.result
+          - name: A4_2
+            action: assign
+            variable: $allRoutes
+            value: $ParseRoutes.result
+        catch:
+          - name: A3_2
+            action: assign
+            variable: $errorMessage
+            value: $A2.message
+      - name: A3
+        action: assign
+        variable: $errorMessage
+        value: $A2.message
+  - name: eachRoute
+    action: foreach
+    list: $allRoutes
+    blocks:
+      - name: A15
+        action: assign
+        variable: $totalRouteCount
+        value: $totalRouteCount + 1
+      - name: A6
+        action: if
+        condition: $eachRoute.item.PROTOCOL == "S"
+        then:
+          - name: A1
+            action: assign
+            variable: $staticRouteCount
+            value: $staticRouteCount + 1
+        else:
+          - name: A7
+            action: if
+            condition: $eachRoute.item.PROTOCOL == "C"
+            then:
+              - name: A8
+                action: assign
+                variable: $connectedRouteCount
+                value: $connectedRouteCount + 1
+            else:
+              - name: A9
+                action: if
+                condition: $eachRoute.item.PROTOCOL == "D"
+                then:
+                  - name: A10
+                    action: assign
+                    variable: $eigrpRouteCount
+                    value: $eigrpRouteCount + 1
+                else:
+                  - name: A11
+                    action: if
+                    condition: $eachRoute.item.PROTOCOL == "O"
+                    then:
+                      - name: A12
+                        action: assign
+                        variable: $ospfRouteCount
+                        value: $ospfRouteCount + 1
+                    else:
+                      - name: A13
+                        action: if
+                        condition: $eachRoute.item.PROTOCOL == "B"
+                        then:
+                          - name: A14
+                            action: assign
+                            variable: $bgpRouteCount
+                            value: $bgpRouteCount + 1
+                        else:
+                          - name: A5
+                            action: if
+                            condition: $eachRoute.item.PROTOCOL == "L"
+                            then:
+                              - name: A24
+                                action: assign
+                                variable: $localRouteCount
+                                value: $localRouteCount + 1
+                            else: []
+  - name: A17
+    action: assign
+    variable: $routeCountObject.Connected_Routes
+    value: $connectedRouteCount
+  - name: A22
+    action: assign
+    variable: $routeCountObject.Static_Routes
+    value: $staticRouteCount
+  - name: A21
+    action: assign
+    variable: $routeCountObject.Eigrp_Routes
+    value: $eigrpRouteCount
+  - name: A20
+    action: assign
+    variable: $routeCountObject.OSPF_Routes
+    value: $ospfRouteCount
+  - name: A18
+    action: assign
+    variable: $routeCountObject.BGP_Routes
+    value: $bgpRouteCount
+  - name: A25
+    action: assign
+    variable: $routeCountObject.Local_Routes
+    value: $localRouteCount
+  - name: A23
+    action: system/Common/ArrayPush
+    inputs:
+      - name: array
+        value: $routeCountByProtocol
+      - name: item
+        value: $routeCountObject
+  - name: A16
+    action: if
+    condition: $eigrpRouteCount > 0
+    then:
+      - name: Try_2
+        action: try
+        try:
+          - name: GetEIGRPTopo
+            action: system/Napalm/execute_cli_command
+            inputs:
+              - name: authKey
+                value: $RouterAuth
+              - name: command
+                value: '"show ip eigrp topology"'
+              - name: timeout
+                value: ""
+              - name: jumpHost
+                value: ""
+          - name: parse2
+            action: ./textfsm_cisco_ios_show_eigrp_topologyv2
+            inputs: []
+          - name: ParseEIGRPTopo
+            action: system/Common/TextFsmParse
+            inputs:
+              - name: template
+                value: $parse2.output
+              - name: text_data
+                value: $GetEIGRPTopo.result
+          - name: A19
+            action: assign
+            variable: $eigrpTopoResult
+            value: $ParseEIGRPTopo.result
+        catch:
+          - name: Sleep_2
+            action: system/Common/Sleep
+            inputs:
+              - name: seconds
+                value: "10"
+          - name: GetEIGRPTopo_2
+            action: system/Napalm/execute_cli_command
+            inputs:
+              - name: authKey
+                value: $RouterAuth
+              - name: command
+                value: '"show ip eigrp topology"'
+              - name: timeout
+                value: ""
+              - name: jumpHost
+                value: ""
+          - name: parse2_2
+            action: ./textfsm_cisco_ios_show_eigrp_topologyv2
+            inputs: []
+          - name: ParseEIGRPTopo_2
+            action: system/Common/TextFsmParse
+            inputs:
+              - name: template
+                value: $parse2_2.output
+              - name: text_data
+                value: $GetEIGRPTopo_2.result
+          - name: A19_2
+            action: assign
+            variable: $eigrpTopoResult
+            value: $ParseEIGRPTopo_2.result
+    else: []
+variables:
+  - name: errorMessage
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: allRoutes
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: ''''''
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: eigrpRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: staticRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: ospfRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: bgpRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: connectedRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: totalRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: eigrpTopoResult
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: routeCountByProtocol
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "[]"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: routeCountObject
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "{}"
+    isInput: false
+    isOutput: false
+    required: false
+    meta: null
+  - name: RouterAuth
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+    isInput: true
+    isOutput: false
+    required: true
+    meta: null
+  - name: localRouteCount
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+meta:
+  version: 5
+  description: Provides information on routing protocols configured
+  workerGroup: default
+  layout: flow

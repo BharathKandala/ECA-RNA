@@ -1,0 +1,176 @@
+name: CiscoShowVersion
+platform: node
+blocks:
+  - name: A2
+    action: try
+    try:
+      - name: GetVersionInfo
+        action: system/Napalm/get_facts
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: jumpHost
+            value: ""
+      - name: OSVersion
+        action: assign
+        variable: $version
+        value: $GetVersionInfo.result.os_version
+      - name: ParseVersionInfo
+        action: assign
+        variable: $versionNumber
+        value: $GetVersionInfo.result.os_version.match(/Version\ (\d+.\d+.\d+)+/)
+      - name: Vendor
+        action: assign
+        variable: $deviceVendor
+        value: $GetVersionInfo.result.vendor
+      - name: SerialNumber
+        action: assign
+        variable: $deviceSerialNumber
+        value: $GetVersionInfo.result.serial_number
+      - name: A1
+        action: assign
+        variable: $hostName
+        value: $GetVersionInfo.result.hostname
+    catch:
+      - name: A3
+        action: assign
+        variable: $errorMessage
+        value: $A2.message
+  - name: A4
+    action: try
+    try:
+      - name: GetImageFileName
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: authKey
+            value: $RouterAuth
+          - name: command
+            value: '"show version | inc System image file is"'
+          - name: timeout
+            value: ""
+          - name: jumpHost
+            value: ""
+      - name: A8
+        action: system/Common/String/StringSplit
+        inputs:
+          - name: str
+            value: $GetImageFileName.result
+          - name: separator
+            value: '":"'
+          - name: len
+            value: ""
+      - name: A9
+        action: system/Common/String/StringRemove
+        inputs:
+          - name: str1
+            value: "$A8.result[1]"
+          - name: str2
+            value: '''"'''
+      - name: A5
+        action: assign
+        variable: $imageFile
+        value: " RegExp($GetImageFileName.result : \\\"[a-zA-Z].*\")"
+      - name: A7
+        action: assign
+        variable: $imageFile
+        value: $A9.result
+    catch:
+      - name: A6
+        action: assign
+        variable: $errorMessage
+        value: $A4.message
+variables:
+  - name: version
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: errorMessage
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: deviceSerialNumber
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: deviceVendor
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: hostName
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: versionNumber
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: tmp
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: false
+    required: false
+    meta: null
+  - name: imageFile
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: false
+    meta: null
+  - name: RouterAuth
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+    isInput: true
+    isOutput: false
+    required: true
+    meta: null
+meta:
+  version: 5
+  description: This flow returns the version of OS running on the Cisco device.
+  workerGroup: default
+  layout: flow

@@ -1,0 +1,100 @@
+name: List_Global_Azure_Compute_Instances
+platform: node
+blocks:
+  - name: get_azure_vms
+    action: system/Azure/Compute/VirtualMachines/VirtualMachines_ListAll
+    inputs:
+      - name: authKey
+        value: $Azure_authKey
+      - name: subscriptionId
+        value: $azure_subscription_id
+  - name: A10
+    action: assign
+    variable: $result
+    value: $get_azure_vms.result.value
+  - name: foreach_azurevm
+    action: foreach
+    list: $result
+    blocks:
+      - name: A3
+        action: system/Azure/Network/NetworkInterfaces/NetworkInterfaces_Get
+        inputs:
+          - name: authKey
+            value: $Azure_authKey
+          - name: resourceGroupName
+            value: "$foreach_azurevm.item.id.split('/')[4]"
+          - name: networkInterfaceName
+            value: "$foreach_azurevm.item.properties.networkProfile.networkInterfaces[0].id.split('/')[8]"
+          - name: subscriptionId
+            value: $azure_subscription_id
+      - name: A6
+        action: system/Azure/Compute/VirtualMachines/VirtualMachines_InstanceView
+        inputs:
+          - name: authKey
+            value: $Azure_authKey
+          - name: resourceGroupName
+            value: "$foreach_azurevm.item.id.split('/')[4]"
+          - name: vmName
+            value: $foreach_azurevm.item.name
+          - name: subscriptionId
+            value: $azure_subscription_id
+      - name: A2
+        action: assign
+        variable: "$result[$foreach_azurevm.index].properties.networkProfile.networkInterfaces[0].details"
+        value: $A3.result
+      - name: A7
+        action: assign
+        variable: "$result[$foreach_azurevm.index].runstate"
+        value: "$A6.result.statuses.reduce((obj,item)=>{obj[item.code.split('/')[0]]=item.displayStatus;\
+          \ return obj;}, {})"
+      - name: A5
+        action: try
+        try:
+          - name: A1
+            action: system/Azure/Network/PublicIPAddresses/PublicIPAddresses_Get
+            inputs:
+              - name: authKey
+                value: $Azure_authKey
+              - name: resourceGroupName
+                value: "$foreach_azurevm.item.id.split('/')[4]"
+              - name: publicIpAddressName
+                value: "$result[$foreach_azurevm.index].properties.networkProfile.networkInterfaces[0].details.properties.ipConfigurations[0].properties.publicIPAddress.id.split('/')[8]"
+              - name: subscriptionId
+                value: $azure_subscription_id
+          - name: A4
+            action: assign
+            variable: "$result[$foreach_azurevm.index].properties.networkProfile.networkInterfaces[0].details.properties.ipConfigurations[0].properties.publicIPAddress.details"
+            value: $A1.result
+        catch: []
+      - action: exit
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: array
+    value: "[]"
+  - name: azure_subscription_id
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Azure_authKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"admin/azure"'
+meta:
+  version: 5
+  description: "Connects to Azure, gets a list of VMs in the subscription, returns\
+    \ details about those VMs"
+  workerGroup: default
+  layout: flow

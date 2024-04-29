@@ -1,0 +1,406 @@
+name: CiscoRouterHealth
+platform: node
+blocks:
+  - action: comment
+    value: Check how long the device has been up.
+  - name: CatchUptimeError
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageUpdate_1
+        inputs:
+          - name: message
+            value: '"Working on Uptime"'
+      - name: Uptime
+        action: ./CiscoUptime
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: UptimeVar
+        action: assign
+        variable: $Device_Uptime
+        value: $Uptime.uptimeInDays  + " Days"
+        breakpoint: enabled
+    catch:
+      - name: UptimeErrorVar
+        action: assign
+        variable: $Result.upTimeError
+        value: $CatchUptimeError.message
+  - action: comment
+    value: Show device memory utilization.
+  - name: CatchProcessMemoryError
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageProcessMem
+        inputs:
+          - name: message
+            value: '"Working on Process Memory"'
+      - name: ProcessMemory
+        action: ./CiscoShowProcessMemory
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: ProcessMemoryVar
+        action: assign
+        variable: $FreeMemoryPercent
+        value: Math.round($ProcessMemory.PercentMemoryFree)
+    catch:
+      - name: A10
+        action: assign
+        variable: $Result.ProcessMemoryError
+        value: $CatchProcessMemoryError.message
+  - action: comment
+    value: Get Version Information
+  - name: CatchShowVersionError
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageShowVer
+        inputs:
+          - name: message
+            value: '"Working on Show Version"'
+      - name: ShowVersion
+        action: ./CiscoShowVersion
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: ShowVersionVersionVar
+        action: assign
+        variable: $Version
+        value: $ShowVersion.version
+      - name: ShowVersionSerialNumberVar
+        action: assign
+        variable: $SerialNumber
+        value: $ShowVersion.router_Serial_Number
+      - name: ShowVersionVendorVar
+        action: assign
+        variable: $Vendor
+        value: $ShowVersion.router_Vendor
+      - name: ShowVersionHostNameVar
+        action: assign
+        variable: $HostName
+        value: $ShowVersion.hostName
+    catch:
+      - name: ShowVersionErrorVar
+        action: assign
+        variable: $Error
+        value: $CatchShowVersionError.message
+  - action: comment
+    value: Get CPU Stats
+  - name: A15
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageShowProc
+        inputs:
+          - name: message
+            value: '"Working on Show Process CPU"'
+      - name: ShowProcessCPU
+        action: ./CiscoShowProcessCPU
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: ShowProcessCPUVar
+        action: assign
+        variable: $CpuFiveMinuteAverage
+        value: $ShowProcessCPU.cpuFiveMinuteAverage
+    catch: []
+  - action: comment
+    value: Get a list of interfaces
+  - name: A2
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageListInterface
+      - name: GetListofInterfaces
+        action: ./CiscoShowInterfaceBrief
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: Assign_device_interface_info
+        action: assign
+        variable: $RouterInterfaces
+        value: $GetListofInterfaces.routerInterfaces
+    catch: []
+  - action: comment
+    value: Get device inventory
+  - name: A3
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageInventory
+      - name: GetRouterSerialandPartNumber
+        action: ./CiscoShowInventory
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: Assign_Part_Number
+        action: assign
+        variable: $RouterPartNumber
+        value: $GetRouterSerialandPartNumber.routerPartNumber
+      - name: Assign_Serial_Number
+        action: assign
+        variable: $RouterSerialNumber
+        value: $GetRouterSerialandPartNumber.routerSerialNumber
+    catch: []
+  - action: comment
+    value: 'Ping specified IP Address to measure round trip times '
+  - name: A5
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessagePingTarget
+      - name: PingTargetDevice
+        action: ./CiscoPingDevice
+        inputs:
+          - name: DeviceAddressToPing
+            value: $Device_To_Ping_From_Core
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: Assign_Avg_RTT
+        action: assign
+        variable: $rttAvg
+        value: $PingTargetDevice.rtt_avg
+      - name: Assign_Max_RTT
+        action: assign
+        variable: $rttMax
+        value: $PingTargetDevice.rtt_max
+      - name: Assign_Min_RTT
+        action: assign
+        variable: $rttMin
+        value: $PingTargetDevice.rtt_min
+    catch:
+      - name: A9
+        action: assign
+        variable: $rttMax
+        value: $A5.message
+  - action: comment
+    value: Get "show ip route" information
+  - name: A13
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageRouteInfo
+      - name: A14
+        action: ./CiscoShowRouting
+        inputs:
+          - name: RouterAuth
+            value: $RouterAuth
+      - name: Assign_Total_Route_Count
+        action: assign
+        variable: $TotalRouteCount
+        value: $A14.totalRouteCount
+      - name: Assing_EIGRP_Topo
+        action: assign
+        variable: $EigrpTopologyInfo
+        value: $A14.eigrpTopoResult
+      - name: Assign_Route_Cnt_By_Proto
+        action: assign
+        variable: $RouteCountByProtocol
+        value: $A14.routeCountByProtocol
+    catch: []
+  - action: comment
+    value: Get boot variable information in case we want to do an upgrade later
+  - name: A1
+    action: try
+    try:
+      - action: system/Common/Status Message Update
+        name: StatusMessageBootVar
+      - name: BootVariableInformation
+        action: ./CiscoShowBootVariable
+        inputs:
+          - name: routerAuth
+            value: $RouterAuth
+      - name: Assign_Boot_Variable
+        action: assign
+        variable: $RouterBootSettings
+        value: $BootVariableInformation.bootInformation
+    catch: []
+variables:
+  - name: FreeMemoryPercent
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: Version
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Vendor
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: SerialNumber
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: HostName
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Device_Uptime
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: CpuFiveMinuteAverage
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: RouterInterfaces
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: array
+    value: "[]"
+  - name: Error
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Result
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "{}"
+  - name: RouterPartNumber
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: RouterSerialNumber
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: rttMax
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: rttMin
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: rttAvg
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+  - name: TotalRouteCount
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: EigrpTopologyInfo
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: RouteCountByProtocol
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: RouterBootSettings
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "[]"
+  - name: RouterAuth
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: object
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco",
+          "secret":"cisco"
+      }
+  - name: Device_To_Ping_From_Core
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"8.8.8.8"'
+meta:
+  version: 5
+  description: "Checks the health of a router by checking CPU, Memory, interface status,\
+    \ routing table metric, and boot variables.  This enable users to undertand the\
+    \ health of their infrastructure."
+  customMET: true
+  workerGroup: default
+  MET: 15
+  layout: flow

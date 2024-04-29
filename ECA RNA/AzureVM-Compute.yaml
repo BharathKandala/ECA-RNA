@@ -1,0 +1,146 @@
+name: AzureVM-Compute
+platform: node
+blocks:
+  - action: switch
+    name: Operations
+    expression: $operationType
+    cases:
+      - value: '"Start"'
+        blocks:
+          - action: system/Azure/Compute/VirtualMachines/VirtualMachines_Start
+            name: Azure_3
+            inputs:
+              - name: authKey
+                value: '"admin/Azure-Auth"'
+              - name: resourceGroupName
+                value: '"Ansible_PoC"'
+              - name: vmName
+                value: $usrVmName
+              - name: subscriptionId
+                value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+          - action: assign
+            name: Assign_1_3
+            variable: $result
+            value: "\"Incident No: \" + $snIncidentNum + \" Operation: \"+ $usrVmName\
+              \ +\" VM Started\""
+          - action: system/Ansible/Tower/Job Templates/Job Templates Launch Create
+            name: Ansible_1
+            inputs:
+              - name: authKey
+                value: '"admin/AnsibleTower-auth"'
+              - name: id
+                value: "119"
+          - action: assign
+            name: varStartVM
+            variable: $updateReq
+            value: "true"
+          - action: system/Common/Sleep
+            name: Sleep_1
+            inputs:
+              - name: seconds
+                value: "20"
+      - value: '"Stop"'
+        blocks:
+          - action: system/Azure/Compute/VirtualMachines/VirtualMachines_PowerOff
+            name: Azure_2
+            inputs:
+              - name: authKey
+                value: '"admin/Azure-Auth"'
+              - name: resourceGroupName
+                value: '"Ansible_PoC"'
+              - name: vmName
+                value: $usrVmName
+              - name: subscriptionId
+                value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+          - action: assign
+            name: Assign_1_2_1
+            variable: $result
+            value: "\"Incident No: \" + $snIncidentNum + \" Operation: \" + $usrVmName\
+              \ + \" VM Stopped\""
+          - action: assign
+            name: varStopVM
+            variable: $updateReq
+            value: "true"
+    default:
+      - action: system/Azure/Compute/VirtualMachines/VirtualMachines_ListAll
+        name: Azure_1
+        inputs:
+          - name: authKey
+            value: '"admin/Azure-Auth"'
+          - name: subscriptionId
+            value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+      - action: assign
+        name: Assign_1_1
+        variable: $result
+        value: $Azure_1
+  - action: if
+    name: If_1
+    then:
+      - action: system/Common/HttpRequest
+        name: UpdateReq
+        inputs:
+          - name: method
+            value: '"POST"'
+          - name: host
+            value: '"150.239.166.49"'
+          - name: protocol
+            value: '"https"'
+          - name: path
+            value: '"/api/v2/job_templates/117/launch/"'
+          - name: headers
+            value: "{\"Content-Type\": \"application/json\"}"
+          - name: followRedirect
+            value: "true"
+          - name: rejectUnauthorized
+            value: "false"
+          - name: body
+            value: "{\"extra_vars\":{\"incident_num\": $snIncidentNum}}"
+          - name: authKey
+            value: '"admin/AnsibleTower-http-auth"'
+    else: []
+    condition: $updateReq
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+  - name: operationType
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: usrVmName
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: snIncidentNum
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: updateReq
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: boolean
+    value: "false"
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

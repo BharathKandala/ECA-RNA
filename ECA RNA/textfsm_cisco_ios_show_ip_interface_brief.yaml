@@ -1,0 +1,27 @@
+name: textfsm_cisco_ios_show_ip_interface_brief
+platform: node
+blocks:
+  - name: cisco_ios_show_interface_brief
+    action: system/Common/String/StringBase64Decode
+    inputs:
+      - name: str
+        value: '"VmFsdWUgSU5URiAoXFMrKQpWYWx1ZSBJUEFERFIgKFxTKykKVmFsdWUgU1RBVFVTICh1cHxkb3dufGFkbWluaXN0cmF0aXZlbHkgZG93bikKVmFsdWUgUFJPVE8gKHVwfGRvd24pCgpTdGFydAogIF4ke0lOVEZ9XHMrJHtJUEFERFJ9XHMrXHcrXHMrXHcrXHMrJHtTVEFUVVN9XHMrJHtQUk9UT30gLT4gUmVjb3JkCiAgIyBDYXB0dXJlIHRpbWUtc3RhbXAgaWYgdnR5IGxpbmUgaGFzIGNvbW1hbmQgdGltZS1zdGFtcGluZyB0dXJuZWQgb24KICBeTG9hZFxzK2ZvclxzKwogIF5UaW1lXHMrc291cmNlXHMraXMK"'
+  - name: A1
+    action: assign
+    variable: $output
+    value: $cisco_ios_show_interface_brief.result
+variables:
+  - name: output
+    level: INTERMEDIATE
+    type: "{\"type\": \"string\"}"
+    value: '""'
+    isInput: false
+    isOutput: true
+    required: true
+    meta: {}
+meta:
+  version: 5
+  description: "This is the textFSM template cisco_ios_show_ip_interface_brief.textfsm\
+    \ from: \"/dhegenba/textfsm/master/templates/cisco_ios_show_ip_interface_brief.textfsm\""
+  customMET: false
+  workerGroup: default

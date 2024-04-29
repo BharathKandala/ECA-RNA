@@ -1,0 +1,67 @@
+name: 08 Loop Interruption with Break and Continue
+platform: node
+blocks:
+  - action: comment
+    value: We want this while loop to keep running as long as the value of $counter
+      is less than 10
+  - name: While_1
+    action: while
+    condition: $counter < 10
+    blocks:
+      - action: comment
+        value: Increment the value of $counter by 1
+      - name: Assign_1
+        action: assign
+        variable: $counter
+        value: $counter + 1
+      - action: comment
+        value: "If our counter value is equal to 8, break out of the loop and move\
+          \ on with the next blocks in the flow"
+      - name: If_1
+        action: if
+        condition: $counter == 8
+        then:
+          - action: break
+        else: []
+      - action: comment
+        value: "If the value of $counter is equal to 5, the Continue block will skip\
+          \ the rest of the steps in the loop and start the next iteration."
+      - name: If_2
+        action: if
+        condition: $counter == 5
+        then:
+          - action: continue
+        else: []
+      - action: comment
+        value: Push a status message into the $result array
+      - name: ArrayPush_1
+        action: system/Common/Array/ArrayPush
+        inputs:
+          - name: array
+            value: $result
+          - name: item
+            value: '"Iteration " + $counter '
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: "[]"
+  - name: counter
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "0"
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default
+  description: "The action blocks \"Break\" and \"Continue\" are used to control the\
+    \ flow of While and ForEach loops. \n Continue will skip ahead to the next loop\
+    \ iteration.  \n Break will exit the loop."

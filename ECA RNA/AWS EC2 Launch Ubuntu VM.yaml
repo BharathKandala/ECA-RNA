@@ -1,0 +1,494 @@
+name: AWS EC2 Launch Ubuntu VM
+platform: node
+blocks:
+  - name: declare_SecurityGroup
+    action: assign
+    variable: $SecurityGroup
+    value: "[$SecurityGroup]"
+  - action: comment
+    value: Get timestamp to name instance
+  - name: timestamp
+    action: system/Common/DateTime/Timestamp Now ms
+  - name: Hostname_timestamp
+    action: assign
+    variable: $Hostname
+    value: $Hostname + "_" + $timestamp.result
+  - name: Hostname_Key
+    action: assign
+    variable: $key_name
+    value: $Hostname + "_key"
+  - action: comment
+    value: |-
+      create security group with all outbound, inbound on 8443, 443,  22
+      reassign the security groups variable to create instance in this group
+  - name: makeF5SecurityGroup
+    action: system/AWS/ec2/CreateSecurityGroup
+    inputs:
+      - name: authKey
+        value: $AWS_authKey
+      - name: region
+        value: $Region
+      - name: body
+        value: |-
+          {
+              "Description": 'F5 Security Group',
+              "GroupName": 'F5 Security Group'
+          }
+    skipped: true
+  - action: comment
+    value: |-
+      PL: sg-0599cbe3fdf99961b
+      F5: sg-0f9e0b01f8dfc2608
+  - action: comment
+    value: Generate an SSH key
+  - name: createKey
+    action: system/AWS/ec2/CreateKeyPair
+    inputs:
+      - name: authKey
+        value: $AWS_authKey
+      - name: region
+        value: $Region
+      - name: body
+        value: "{\"KeyName\":$key_name}"
+  - action: comment
+    value: Store Key
+  - name: _A7
+    action: assign
+    variable: $privKey
+    value: $createKey.result.KeyMaterial
+  - action: comment
+    value: Compute instance type
+  - name: If_GB_CPU_zero
+    action: if
+    condition: $Mem_GB == "" || $Num_CPUs == ""
+    then:
+      - name: _Throw_1
+        action: throw
+        error: "\"Error: unspecified memory or cpus\""
+    else: []
+  - name: Assign_mem_parse
+    action: assign
+    variable: $Mem_GB
+    value: parseFloat($Mem_GB)/1.074 + ""
+  - name: eachType
+    action: foreach
+    list: $instanceTypes
+    blocks:
+      - name: If_Max
+        action: if
+        condition: parseFloat($eachType.item.memory) >= parseFloat($Mem_GB) && parseFloat($eachType.item.max_CPUs)
+          >= parseFloat($Num_CPUs)
+        then:
+          - name: Assign_type_item
+            action: assign
+            variable: $type
+            value: $eachType.item.name
+          - action: break
+        else: []
+  - name: assign_InstanceTypeAWS
+    action: assign
+    variable: $instance_type
+    value: $type
+  - action: comment
+    value: ' Define Disk Size Space'
+  - name: if_unassigned_Storage_Disk_Size
+    action: if
+    condition: $Storage_disk_size_GB == ""
+    then:
+      - name: Storage_disk_size_default
+        action: assign
+        variable: $Storage_disk_size_GB
+        value: "40"
+    else: []
+  - action: comment
+    value: Deploy the instance
+  - name: deployInstance
+    action: system/AWS/ec2/RunInstances
+    inputs:
+      - name: authKey
+        value: $AWS_authKey
+      - name: region
+        value: $Region
+      - name: body
+        value: |-
+          {
+            "BlockDeviceMappings": [
+              {
+                "DeviceName": "/dev/sda1",
+                "Ebs": {
+                        "VolumeSize": parseInt($Storage_disk_size_GB),
+                        "VolumeType": "standard"
+                      }
+              }
+            ],
+            "ImageId": $image_id,
+            "InstanceType": $instance_type,
+            "KeyName": $key_name,
+            "MaxCount": 1,
+            "MinCount": 1,
+            "SecurityGroupIds": $SecurityGroup,
+            "TagSpecifications": [
+              {
+                "ResourceType": "instance",
+                "Tags": [
+                  {
+                    "Key": "Name",
+                    "Value": $Hostname
+                  }
+                ]
+              }
+            ]
+          }
+  - action: comment
+    value: "Run loop N times, where N is the max_wait variable"
+  - name: Array_max_wait
+    action: foreach
+    list: Array($max_wait)
+    blocks:
+      - action: comment
+        value: get info on instance
+      - name: instanceInfo
+        action: system/AWS/ec2/DescribeInstances
+        inputs:
+          - name: authKey
+            value: $AWS_authKey
+          - name: region
+            value: $Region
+          - name: body
+            value: "{\"InstanceIds\":[$deployInstance.result.Instances[0].InstanceId]}"
+      - name: testCommand
+        action: system/Common/SSH
+        inputs:
+          - name: authKey
+            value: $SSH_authKey
+          - name: command
+            value: '''echo -n 42'''
+          - name: host
+            value: "$instanceInfo.result.Reservations[0].Instances[0].PublicIpAddress"
+          - name: port
+            value: "22"
+          - name: username
+            value: '''ubuntu'''
+          - name: privateKey
+            value: $privKey
+      - name: _A12
+        action: if
+        condition: "$instanceInfo.result.Reservations[0].Instances[0].State.Name ==\
+          \ 'running' &&\n$instanceInfo.result.Reservations[0].Instances[0].NetworkInterfaces[0].Association\
+          \ && \n$testCommand.success"
+        then:
+          - action: comment
+            value: exit loop and proceed
+          - action: break
+        else:
+          - action: comment
+            value: otherwise wait 1 second and check again
+          - name: Sleep_time1
+            action: system/Common/Sleep
+            inputs:
+              - name: seconds
+                value: "1"
+      - action: comment
+        value: if network is configured on this iteration
+  - action: comment
+    value: "Get information on instance, assign external/public IP to a variable"
+  - name: Sleep_time2
+    action: system/Common/Sleep
+    inputs:
+      - name: seconds
+        value: "1"
+  - name: _A6
+    action: assign
+    variable: $internal_ip
+    value: "$instanceInfo.result.Reservations[0].Instances[0].NetworkInterfaces[0].PrivateIpAddress"
+  - name: _A8
+    action: assign
+    variable: |-
+      [
+          $external_ip,
+          $ip_address
+      ]
+    value: |-
+      [
+      $instanceInfo.result.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp,
+      $instanceInfo.result.Reservations[0].Instances[0].NetworkInterfaces[0].Association.PublicIp
+      ]
+  - name: declare_SSH_authKey
+    action: assign
+    variable: $SSH_authKey
+    value: |-
+      {
+        "port": 22,
+        "host": $external_ip,
+        "username": "ubuntu",
+        "privateKey": $privKey
+       }
+  - action: comment
+    value: Create SSH Auth
+  - name: Pliant_1
+    action: system/Pliant/auth-storage-controller/createAuthStorage
+    inputs:
+      - name: authKey
+        value: $SSH_AWS_authKey
+      - name: storageDto
+        value: |-
+          {
+           "serviceName": "Common/SSH",
+           "name": "Ubuntu-AWS-" + $timestamp.result,
+           "description": "SSH access as "+ "ubuntu" + " to the aws Ubuntu Linux VM at " + $external_ip,
+           "data": {
+            "port": 22,
+            "host": $external_ip,
+            "username": "ubuntu",
+            "privateKey": $privKey
+           },
+           "canRead": [],
+           "canOverride": []
+          }
+      - name: userName
+        value: '''admin'''
+    skipped: true
+  - name: runUpdate
+    action: system/Common/SSH
+    inputs:
+      - name: authKey
+        value: $SSH_authKey
+      - name: command
+        value: '`sudo apt-get update -y`'
+  - name: installJQ
+    action: system/Common/SSH
+    inputs:
+      - name: authKey
+        value: $SSH_authKey
+      - name: command
+        value: '`sudo apt-get install jq -y`'
+  - name: getPubKey
+    action: system/Common/SSH
+    inputs:
+      - name: authKey
+        value: $SSH_authKey
+      - name: command
+        value: '"sudo cat ~/.ssh/authorized_keys | tr -d ''\n''"'
+  - name: returnPubKey
+    action: assign
+    variable: $pubKey
+    value: $getPubKey.result
+  - name: Result
+    action: assign
+    variable: $result
+    value: |-
+      {
+          "Create VM": $deployInstance.result,
+          "Update": $runUpdate.result,
+          "Install JQ": $installJQ.result
+      }
+variables:
+  - name: Region
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"us-east-1"'
+    meta:
+      description: Defines Region for AWS + Sec Group
+  - name: Hostname
+    required: true
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"teaser"'
+    meta:
+      description: Defines Hostname properties (used to name your VM)
+  - name: key_name
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"F5-key"'
+  - name: image_id
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"ami-0885b1f6bd170450c"'
+    meta:
+      description: Template for AWS EC2 Instances
+  - name: max_wait
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: integer
+    value: "20"
+    meta:
+      description: wait in seconds
+  - name: AWS_authKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"demo/AWS_Console_Admin_Production"'
+    meta:
+      description: Pathing for authKey for AWS
+  - name: SecurityGroup
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"sg-0664406b093edb419"'
+    meta:
+      description: Declares Sec Group
+  - name: privKey
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: pubKey
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: LoginUserName
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"ubuntu"'
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Num_CPUs
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"2"'
+    meta:
+      description: Helps assign Instance type
+  - name: Mem_GB
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"6"'
+    meta:
+      description: Helps assign Instance type
+  - name: ip_address
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: internal_ip
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: external_ip
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: instance_type
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Storage_disk_size_GB
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"10"'
+    meta:
+      description: Declares amount of storage allotted (cannot be lower than 8)
+  - name: SSH_authKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"demo/SSH_ubuntu_on_demo"'
+    meta:
+      description: Needed to obtain a public ip (gets reassigned after the block SSH
+        testCommand)
+  - name: SSH_AWS_authKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"admin/sandbox"'
+    meta:
+      description: authKey used to create an AuthStorage
+  - name: type
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: instanceTypes
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: object
+    value: "[{\"name\":\"t2.nano\",\"max_CPUs\":\"1\",\"memory\":\"0.5\"},{\"name\"\
+      :\"t2.micro\",\"max_CPUs\":\"1\",\"memory\":\"1\"},{\"name\":\"t2.small\",\"\
+      max_CPUs\":\"1\",\"memory\":\"2\"},{\"name\":\"t2.medium\",\"max_CPUs\":\"2\"\
+      ,\"memory\":\"4\"},{\"name\":\"t2.large\",\"max_CPUs\":\"2\",\"memory\":\"8\"\
+      },{\"name\":\"t2.xlarge\",\"max_CPUs\":\"4\",\"memory\":\"16\"},{\"name\":\"\
+      t2.2xlarge\",\"max_CPUs\":\"8\",\"memory\":\"32\"}]"
+meta:
+  version: 5
+  workerGroup: default
+  layout: flat
+  description: Launchs Ubuntu VM in EC2

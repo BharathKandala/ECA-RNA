@@ -1,0 +1,78 @@
+name: CiscoShowBootVariable
+platform: node
+blocks:
+  - action: comment
+    value: Detect whether the device uses SSH or Telnet for connectivity.
+  - name: A2
+    action: try
+    try:
+      - action: comment
+        value: Rounds to the nearest day
+      - name: A1
+        action: system/Napalm/execute_cli_command
+        inputs:
+          - name: command
+            value: '"show version | includ Configuration register"'
+      - name: A7
+        action: system/Common/String/StringSplit
+        inputs:
+          - name: str
+            value: $A1.result
+          - name: separator
+            value: '"\n"'
+        skipped: true
+      - name: A3
+        action: assign
+        variable: $bootInformation
+        value: $A1.result
+    catch:
+      - name: A4
+        action: assign
+        variable: $errorMessage
+        value: $A2.message
+variables:
+  - name: errorMessage
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: routerAuth
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: |-
+      {
+          "os": "ios",
+          "protocol": "telnet",
+          "ipAddress": "192.168.109.215",
+          "port": "23",
+          "username": "cisco",
+          "password": "cisco"
+      }
+  - name: bootInformation
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: ''''''
+  - name: auth_router
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"demo/CSR1_dot_37"'
+meta:
+  version: 5
+  description: Check boot variable settings on the router
+  workerGroup: default
+  layout: flow
