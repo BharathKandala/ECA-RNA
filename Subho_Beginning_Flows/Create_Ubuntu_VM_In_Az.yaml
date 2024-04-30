@@ -1,16 +1,6 @@
 name: Create_Ubuntu_VM_In_Az
 platform: node
 blocks:
-  - action: comment
-    value: "Subh:  Commented the next line as then the resource group is create by\
-      \ the name of VM host name"
-  - name: A3
-    action: assign
-    variable: $resource_group_name
-    value: $hostname
-    skipped: true
-  - action: comment
-    value: Make a pair of SSH keys to use in the new VM
   - name: GenerateSSHKeyPair
     action: system/Common/OpenSSL/GenerateSSHKeyPair
     inputs:
@@ -24,21 +14,6 @@ blocks:
     action: assign
     variable: $private_key
     value: $GenerateSSHKeyPair.result.private
-  - name: create_resource_group
-    action: system/Azure/Resources/ResourceGroups/ResourceGroups_CreateOrUpdate
-    inputs:
-      - name: authKey
-        value: $Azure_authKey_Name
-      - name: resourceGroupName
-        value: $resource_group_name
-      - name: parameters
-        value: "{\"location\":$location}"
-      - name: subscriptionId
-        value: $subscriptionId
-  - name: A6
-    action: assign
-    variable: $debug.create_resource_group
-    value: $create_resource_group.result
   - name: create_vnet
     action: system/Azure/Network/VirtualNetworks/VirtualNetworks_CreateOrUpdate
     inputs:
@@ -47,11 +22,11 @@ blocks:
       - name: resourceGroupName
         value: $resource_group_name
       - name: virtualNetworkName
-        value: $resource_group_name
+        value: $hostname
       - name: parameters
-        value: |2-
-           {
-                      "name": $resource_group_name,
+        value: |-
+          {
+                      "name": $hostname,
                       "type": "Microsoft.Network/VirtualNetworks",
                       "location": $location,
                       "tags": {},
@@ -74,50 +49,10 @@ blocks:
                   }
       - name: subscriptionId
         value: $subscriptionId
-  - action: comment
-    value: "Below is a copy of the previous, except key in above is taken from generic\
-      \ variable"
-  - action: system/Azure/Network/VirtualNetworks/VirtualNetworks_CreateOrUpdate
-    name: create_vnet_1
-    inputs:
-      - name: authKey
-        value: '"admin/Azure"'
-      - name: resourceGroupName
-        value: $resource_group_name
-      - name: virtualNetworkName
-        value: $resource_group_name
-      - name: parameters
-        value: |2-
-           {
-                      "name": $resource_group_name,
-                      "type": "Microsoft.Network/VirtualNetworks",
-                      "location": $location,
-                      "tags": {},
-                      "properties": {
-                          "addressSpace": {
-                              "addressPrefixes": [
-                                  "10.0.0.0/24"
-                              ]
-                          },
-                          "subnets": [
-                              {
-                                  "name": $resource_group_name,
-                                  "properties": {
-                                      "addressPrefix": "10.0.0.0/24"
-                                  }
-                              }
-                          ],
-                          "enableDdosProtection": false
-                      }
-                  }
-      - name: subscriptionId
-        value: $subscriptionId
-    skipped: true
   - name: A16
     action: assign
     variable: $debug.create_vnet
     value: $create_vnet.result
-    breakpoint: enabled
   - name: create_nsg
     action: system/Azure/Network/NetworkSecurityGroups/NetworkSecurityGroups_CreateOrUpdate
     inputs:
@@ -126,23 +61,22 @@ blocks:
       - name: resourceGroupName
         value: $resource_group_name
       - name: networkSecurityGroupName
-        value: $resource_group_name
+        value: $hostname
       - name: parameters
         value: |-
           {
                       "type": "Microsoft.Network/networkSecurityGroups",
-                      "name": $resource_group_name,
+                      "name": $hostname,
                       "location": $location,
                       "tags": {}
                   }
       - name: subscriptionId
         value: $subscriptionId
+    breakpoint: enabled
   - name: A18
     action: assign
     variable: $debug.create_nsg
     value: $create_nsg.result
-  - action: comment
-    value: Allow HTTPS from anywhere
   - name: A19
     action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
     inputs:
@@ -151,7 +85,7 @@ blocks:
       - name: resourceGroupName
         value: $resource_group_name
       - name: networkSecurityGroupName
-        value: $resource_group_name
+        value: $hostname
       - name: securityRuleName
         value: '"HTTPS"'
       - name: securityRuleParameters
@@ -172,8 +106,6 @@ blocks:
           }}
       - name: subscriptionId
         value: $subscriptionId
-  - action: comment
-    value: Allow HTTP from anywhere
   - name: A21
     action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
     inputs:
@@ -182,7 +114,7 @@ blocks:
       - name: resourceGroupName
         value: $resource_group_name
       - name: networkSecurityGroupName
-        value: $resource_group_name
+        value: $hostname
       - name: securityRuleName
         value: '"HTTP"'
       - name: securityRuleParameters
@@ -203,10 +135,6 @@ blocks:
           }}
       - name: subscriptionId
         value: $subscriptionId
-  - action: comment
-    value: Allow SSH from only a specific source
-  - action: comment
-    value: Altered from original (original one below)
   - name: A22
     action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
     inputs:
@@ -215,9 +143,9 @@ blocks:
       - name: resourceGroupName
         value: $resource_group_name
       - name: networkSecurityGroupName
-        value: $resource_group_name
+        value: $hostname
       - name: securityRuleName
-        value: '"SSH-Ops"'
+        value: '"pl-SSH-Ops"'
       - name: securityRuleParameters
         value: |-
           {"properties": {
@@ -236,36 +164,6 @@ blocks:
           }}
       - name: subscriptionId
         value: $subscriptionId
-  - action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
-    name: A22_1
-    inputs:
-      - name: authKey
-        value: $Azure_authKey_Name
-      - name: resourceGroupName
-        value: $resource_group_name
-      - name: networkSecurityGroupName
-        value: $resource_group_name
-      - name: securityRuleName
-        value: '"SSH-Ops"'
-      - name: securityRuleParameters
-        value: |-
-          {"properties": {
-            "protocol": "TCP",
-            "sourcePortRange": "*",
-            "destinationPortRange": "22",
-            "sourceAddressPrefix": Allow_SSH_From_IP,
-            "destinationAddressPrefix": "*",
-            "access": "Allow",
-            "priority": 323,
-            "direction": "Inbound",
-            "sourcePortRanges": [],
-            "destinationPortRanges": [],
-            "sourceAddressPrefixes": [],
-            "destinationAddressPrefixes": []
-          }}
-      - name: subscriptionId
-        value: $subscriptionId
-    skipped: true
   - name: create_public_ip
     action: system/Azure/Network/PublicIPAddresses/PublicIPAddresses_CreateOrUpdate
     inputs:
@@ -324,9 +222,6 @@ blocks:
             inputs:
               - name: seconds
                 value: "3"
-    breakpoint: enabled
-  - action: exit
-    skipped: true
   - name: create_nic
     action: system/Azure/Network/NetworkInterfaces/NetworkInterfaces_CreateOrUpdate
     inputs:
@@ -429,12 +324,33 @@ blocks:
           }
       - name: subscriptionId
         value: $subscriptionId
+    breakpoint: enabled
   - name: A7
     action: assign
     variable: $debug.create_vm
     value: $create_vm.result
+  - action: system/Common/HttpRequest
+    name: HttpRequest_1_1
+    inputs:
+      - name: method
+        value: '"POST"'
+      - name: host
+        value: '"150.239.166.49"'
+      - name: protocol
+        value: '"https"'
+      - name: path
+        value: '"/api/v2/job_templates/117/launch/"'
+      - name: headers
+        value: |-
+          {
+              "Content-Type": "application/json"
+          }
+      - name: body
+        value: "{\"extra_vars\":{\"incident_num\": $snIncidentNum}}"
+      - name: authKey
+        value: '"admin/AnsibleTower-http-auth"'
+    breakpoint: enabled
   - action: exit
-    skipped: true
   - name: A12
     action: foreach
     list: Array($maxWait)
@@ -443,9 +359,21 @@ blocks:
         action: system/Common/SSH
         inputs:
           - name: authKey
-            value: $new_vm_SSH_authKey_name
+            value: $Azure_authKey_Name
           - name: command
             value: '"echo -n 42"'
+          - name: connectionPool
+            value: "true"
+          - name: host
+            value: $hostname
+          - name: port
+            value: "22"
+          - name: username
+            value: '"ubuntu"'
+          - name: privateKey
+            value: $private_key
+          - name: timeout
+            value: "100"
       - name: _A15
         action: if
         condition: $test_ssh_to_new_vm.result
@@ -458,6 +386,26 @@ blocks:
               - name: seconds
                 value: "3"
     breakpoint: enabled
+  - action: system/Common/HttpRequest
+    name: HttpRequest_1
+    inputs:
+      - name: method
+        value: '"POST"'
+      - name: host
+        value: '"150.239.166.49"'
+      - name: protocol
+        value: '"https"'
+      - name: path
+        value: '"/api/v2/job_templates/117/launch/"'
+      - name: headers
+        value: |-
+          {
+              "Content-Type": "application/json"
+          }
+      - name: body
+        value: "{\"extra_vars\":{\"incident_num\": $snIncidentNum}}"
+      - name: authKey
+        value: '"admin/AnsibleTower-http-auth"'
 variables:
   - name: resource_group_name
     required: false
@@ -466,7 +414,7 @@ variables:
     level: INTERMEDIATE
     type:
       type: string
-    value: '"Ansible_POC"'
+    value: '"Ansible_PoC"'
   - name: subscriptionId
     required: true
     isInput: true
@@ -498,7 +446,7 @@ variables:
     level: INTERMEDIATE
     type:
       type: string
-    value: '"vm-one-new"'
+    value: '"pl-vm-one-new"'
   - name: location
     required: false
     isInput: false
@@ -554,10 +502,18 @@ variables:
     level: INTERMEDIATE
     type:
       type: string
-    value: '"00.000.000.00/32"'
+    value: '"0.0.0.0"'
+  - name: snIncidentNum
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
 meta:
   version: 5
   description: Deploys  Ubuntu VM in Azure for Pliant install but in its own Resource
     Group and Network
   workerGroup: default
-  layout: flat
+  layout: flow
