@@ -1,0 +1,27 @@
+name: NokiaTest
+platform: node
+blocks:
+  - action: system/Common/SSH
+    name: SSH_1
+    inputs:
+      - name: authKey
+        value: '"admin/NetworkSSH"'
+      - name: command
+        value: '`sudo sshpass -p ''NokiaSrl1!'' ssh admin@clab-vr03-srl ''show version''`'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $SSH_1
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

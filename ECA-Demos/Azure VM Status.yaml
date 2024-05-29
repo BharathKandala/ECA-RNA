@@ -1,0 +1,31 @@
+name: Azure VM Status
+platform: node
+blocks:
+  - action: system/Azure/Compute/VirtualMachines/VirtualMachines_InstanceView
+    name: Azure_1
+    inputs:
+      - name: authKey
+        value: '"admin/Azure-Auth"'
+      - name: resourceGroupName
+        value: '"Ansible_POC"'
+      - name: vmName
+        value: '"rhel9"'
+      - name: subscriptionId
+        value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $Azure_1
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

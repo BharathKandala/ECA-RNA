@@ -1,0 +1,517 @@
+name: Create_Ubuntu_VM_Azure
+platform: node
+blocks:
+  - name: GenerateSSHKeyPair
+    action: system/Common/OpenSSL/GenerateSSHKeyPair
+    inputs:
+      - name: bits
+        value: "2048"
+  - name: A2
+    action: assign
+    variable: $public_key
+    value: $GenerateSSHKeyPair.result.public
+  - name: A1
+    action: assign
+    variable: $private_key
+    value: $GenerateSSHKeyPair.result.private
+  - name: create_vnet
+    action: system/Azure/Network/VirtualNetworks/VirtualNetworks_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: virtualNetworkName
+        value: $hostname
+      - name: parameters
+        value: |-
+          {
+                      "name": $hostname,
+                      "type": "Microsoft.Network/VirtualNetworks",
+                      "location": $location,
+                      "tags": {},
+                      "properties": {
+                          "addressSpace": {
+                              "addressPrefixes": [
+                                  "10.0.0.0/24"
+                              ]
+                          },
+                          "subnets": [
+                              {
+                                  "name": $resource_group_name,
+                                  "properties": {
+                                      "addressPrefix": "10.0.0.0/24"
+                                  }
+                              }
+                          ],
+                          "enableDdosProtection": false
+                      }
+                  }
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: A16
+    action: assign
+    variable: $debug.create_vnet
+    value: $create_vnet.result
+  - name: create_nsg
+    action: system/Azure/Network/NetworkSecurityGroups/NetworkSecurityGroups_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: networkSecurityGroupName
+        value: $hostname
+      - name: parameters
+        value: |-
+          {
+                      "type": "Microsoft.Network/networkSecurityGroups",
+                      "name": $hostname,
+                      "location": $location,
+                      "tags": {}
+                  }
+      - name: subscriptionId
+        value: $subscriptionId
+    breakpoint: enabled
+  - name: A18
+    action: assign
+    variable: $debug.create_nsg
+    value: $create_nsg.result
+  - name: A19
+    action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: networkSecurityGroupName
+        value: $hostname
+      - name: securityRuleName
+        value: '"HTTPS"'
+      - name: securityRuleParameters
+        value: |-
+          {"properties": {
+            "protocol": "TCP",
+            "sourcePortRange": "*",
+            "destinationPortRange": "443",
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "*",
+            "access": "Allow",
+            "priority": 320,
+            "direction": "Inbound",
+            "sourcePortRanges": [],
+            "destinationPortRanges": [],
+            "sourceAddressPrefixes": [],
+            "destinationAddressPrefixes": []
+          }}
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: A21
+    action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: networkSecurityGroupName
+        value: $hostname
+      - name: securityRuleName
+        value: '"HTTP"'
+      - name: securityRuleParameters
+        value: |-
+          {"properties": {
+            "protocol": "TCP",
+            "sourcePortRange": "*",
+            "destinationPortRange": "80",
+            "sourceAddressPrefix": "*",
+            "destinationAddressPrefix": "*",
+            "access": "Allow",
+            "priority": 322,
+            "direction": "Inbound",
+            "sourcePortRanges": [],
+            "destinationPortRanges": [],
+            "sourceAddressPrefixes": [],
+            "destinationAddressPrefixes": []
+          }}
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: A22
+    action: system/Azure/Network/SecurityRules/SecurityRules_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: networkSecurityGroupName
+        value: $hostname
+      - name: securityRuleName
+        value: '"pl-SSH-Ops"'
+      - name: securityRuleParameters
+        value: |-
+          {"properties": {
+            "protocol": "TCP",
+            "sourcePortRange": "*",
+            "destinationPortRange": "22",
+            "sourceAddressPrefix": $Allow_SSH_From_IP,
+            "destinationAddressPrefix": "*",
+            "access": "Allow",
+            "priority": 323,
+            "direction": "Inbound",
+            "sourcePortRanges": [],
+            "destinationPortRanges": [],
+            "sourceAddressPrefixes": [],
+            "destinationAddressPrefixes": []
+          }}
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: create_public_ip
+    action: system/Azure/Network/PublicIPAddresses/PublicIPAddresses_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: publicIpAddressName
+        value: $hostname
+      - name: parameters
+        value: |-
+          {
+            "location": $location,
+            "sku": {
+              "name": "Standard"
+            },
+            "properties": {
+              "publicIPAllocationMethod": "Static",
+              "publicIPAddressVersion": "IPv4",
+              "idleTimeoutInMinutes": 10
+            }
+          }
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: A9
+    action: assign
+    variable: $debug.create_public_ip
+    value: $create_public_ip.result
+  - name: A8
+    action: foreach
+    list: Array($maxWait)
+    blocks:
+      - name: get_public_ip
+        action: system/Azure/Network/PublicIPAddresses/PublicIPAddresses_Get
+        inputs:
+          - name: authKey
+            value: $Azure_authKey_Name
+          - name: resourceGroupName
+            value: $resource_group_name
+          - name: publicIpAddressName
+            value: $hostname
+          - name: subscriptionId
+            value: $subscriptionId
+      - name: _A6
+        action: if
+        condition: '"Succeeded" == $get_public_ip.result.properties.provisioningState'
+        then:
+          - name: _A20
+            action: assign
+            variable: $public_ip
+            value: $get_public_ip.result.properties.ipAddress
+          - action: break
+        else:
+          - name: A10
+            action: system/Common/Sleep
+            inputs:
+              - name: seconds
+                value: "3"
+  - name: create_nic
+    action: system/Azure/Network/NetworkInterfaces/NetworkInterfaces_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: networkInterfaceName
+        value: $hostname
+      - name: parameters
+        value: |-
+          {
+            "location": $location,
+            "properties": {
+              "enableAcceleratedNetworking": "false",
+              "networkSecurityGroup": {
+                "id": $create_nsg.result.id
+              },
+              "ipConfigurations": [
+                {
+                  "name": $hostname,
+                  "properties": {
+                    "publicIPAddress": {
+                      "id": $create_public_ip.result.id
+                    },
+                    "subnet": {
+                      "id": $create_vnet.result.properties.subnets[0].id
+                    }
+                  }
+                }
+              ]
+            }
+          }
+      - name: subscriptionId
+        value: $subscriptionId
+  - name: A11
+    action: assign
+    variable: $debug.create_nic
+    value: $create_nic.result
+  - name: create_vm
+    action: system/Azure/Compute/VirtualMachines/VirtualMachines_CreateOrUpdate
+    inputs:
+      - name: authKey
+        value: $Azure_authKey_Name
+      - name: resourceGroupName
+        value: $resource_group_name
+      - name: vmName
+        value: $hostname
+      - name: parameters
+        value: |-
+          {
+            "location": $location,
+            "name": $hostname,
+            "properties": {
+              "hardwareProfile": {
+                "vmSize": "Standard_B4ms"
+              },
+              "storageProfile": {
+              "imageReference": {
+                  "sku": "20_04-lts-gen2",
+                  "publisher": "canonical",
+                  "version": "latest",
+                  "offer": "0001-com-ubuntu-server-focal"
+                },
+                "osDisk": {
+                  "caching": "ReadWrite",
+                  "managedDisk": {
+                    "storageAccountType": "Premium_LRS"
+                  },
+                  "name": "myVMosdisk"+$hostname,
+                  "createOption": "FromImage"
+                }
+              },
+              "osProfile": {
+                "adminUsername": "ubuntu",
+                "computerName": $hostname,
+                "linuxConfiguration": {
+                  "ssh": {
+                    "publicKeys": [
+                      {
+                        "path": "/home/ubuntu/.ssh/authorized_keys",
+                        "keyData": $public_key
+                      }
+                    ]
+                  },
+                  "disablePasswordAuthentication": true
+                }
+              },
+              "networkProfile": {
+                "networkInterfaces": [
+                  {
+                    "id": $create_nic.result.id,
+                    "properties": {
+                      "primary": true
+                    }
+                  }
+                ]
+              }
+            }
+          }
+      - name: subscriptionId
+        value: $subscriptionId
+    breakpoint: enabled
+  - name: A7
+    action: assign
+    variable: $debug.create_vm
+    value: $create_vm.result
+  - action: system/Common/HttpRequest
+    name: HttpRequest_1_1
+    inputs:
+      - name: method
+        value: '"POST"'
+      - name: host
+        value: '"150.239.166.49"'
+      - name: protocol
+        value: '"https"'
+      - name: path
+        value: '"/api/v2/job_templates/117/launch/"'
+      - name: headers
+        value: |-
+          {
+              "Content-Type": "application/json"
+          }
+      - name: body
+        value: "{\"extra_vars\":{\"incident_num\": $snIncidentNum}}"
+      - name: authKey
+        value: '"admin/AnsibleTower-http-auth"'
+    breakpoint: enabled
+  - action: exit
+  - name: A12
+    action: foreach
+    list: Array($maxWait)
+    blocks:
+      - name: test_ssh_to_new_vm
+        action: system/Common/SSH
+        inputs:
+          - name: authKey
+            value: $Azure_authKey_Name
+          - name: command
+            value: '"echo -n 42"'
+          - name: connectionPool
+            value: "true"
+          - name: host
+            value: $hostname
+          - name: port
+            value: "22"
+          - name: username
+            value: '"ubuntu"'
+          - name: privateKey
+            value: $private_key
+          - name: timeout
+            value: "100"
+      - name: _A15
+        action: if
+        condition: $test_ssh_to_new_vm.result
+        then:
+          - action: break
+        else:
+          - name: A13
+            action: system/Common/Sleep
+            inputs:
+              - name: seconds
+                value: "3"
+    breakpoint: enabled
+  - action: system/Common/HttpRequest
+    name: HttpRequest_1
+    inputs:
+      - name: method
+        value: '"POST"'
+      - name: host
+        value: '"150.239.166.49"'
+      - name: protocol
+        value: '"https"'
+      - name: path
+        value: '"/api/v2/job_templates/117/launch/"'
+      - name: headers
+        value: |-
+          {
+              "Content-Type": "application/json"
+          }
+      - name: body
+        value: "{\"extra_vars\":{\"incident_num\": $snIncidentNum}}"
+      - name: authKey
+        value: '"admin/AnsibleTower-http-auth"'
+variables:
+  - name: resource_group_name
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"Ansible_PoC"'
+  - name: subscriptionId
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"8427562f-8418-42ba-bd2d-f267f0f59639"'
+  - name: maxWait
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "100"
+  - name: public_ip
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: hostname
+    required: true
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"pl-vm-one-new"'
+  - name: location
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"eastus"'
+  - name: Azure_authKey_Name
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"admin/Azure-Auth"'
+  - name: private_key
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: public_key
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: new_vm_SSH_authKey_name
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"mykey"'
+  - name: debug
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: "{}"
+  - name: Allow_SSH_From_IP
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"0.0.0.0"'
+  - name: snIncidentNum
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+meta:
+  version: 5
+  workerGroup: default
+  layout: flow

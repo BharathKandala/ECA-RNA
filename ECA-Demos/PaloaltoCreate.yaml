@@ -1,0 +1,62 @@
+name: PaloaltoCreate
+platform: node
+blocks:
+  - action: system/Paloalto/policies-security-rules/Create a security rule
+    name: Paloalto_4
+    inputs:
+      - name: authKey
+        value: '"admin/palalto"'
+      - name: name
+        value: '"allow-ssh"'
+      - name: location
+        value: '"vsys"'
+      - name: vsys
+        value: '"vsys1"'
+      - name: input_format
+        value: '"json"'
+      - name: output_format
+        value: '"json"'
+      - name: Body
+        value: |-
+          {
+              "entry": {
+                  "@name": "allow-ssh",
+
+                  "from": {
+                      "member": ["any"]
+                  },
+                  "to": {
+                      "member": ["any"]
+                  },
+                  "source": {
+                      "member": ["any"]
+                  },
+                  "destination": {
+                      "member": ["any"]
+                  },
+                  "service": {
+                      "member": ["any"]
+                  },
+                  "application": {
+                      "member": ["any"]
+                  },
+                  "action": "allow"
+              }
+          }
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $Paloalto_4
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

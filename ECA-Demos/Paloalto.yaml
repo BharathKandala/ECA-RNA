@@ -1,0 +1,102 @@
+name: Paloalto
+platform: node
+blocks:
+  - action: system/Paloalto/policies-security-rules/Rename a security rule
+    name: Paloalto_3
+    inputs:
+      - name: authKey
+        value: '"admin/palalto"'
+      - name: name
+        value: '"internetzone-rna"'
+      - name: location
+        value: '"vsys"'
+      - name: vsys
+        value: '"vsys1"'
+      - name: newname
+        value: '"internetzone-rna123"'
+    skipped: true
+  - action: system/Paloalto/policies-security-rules/Delete a security rule
+    name: Paloalto_1
+    inputs:
+      - name: authKey
+        value: '"admin/palalto"'
+      - name: name
+        value: '"internetzone-rna123"'
+      - name: location
+        value: '"vsys"'
+      - name: vsys
+        value: '"vsys1"'
+      - name: output_format
+        value: '"xml"'
+    skipped: true
+  - action: system/Paloalto/policies-security-rules/List security rules
+    name: Paloalto_2
+    inputs:
+      - name: authKey
+        value: '"admin/palalto"'
+      - name: location
+        value: '"vsys"'
+      - name: vsys
+        value: '"vsys1"'
+      - name: output_format
+        value: '"json"'
+  - action: system/Paloalto/policies-security-rules/Create a security rule
+    name: Paloalto_4
+    inputs:
+      - name: authKey
+        value: '"admin/palalto"'
+      - name: name
+        value: '"internet"'
+      - name: location
+        value: '"vsys"'
+      - name: vsys
+        value: '"vsys1"'
+      - name: input_format
+        value: '"json"'
+      - name: output_format
+        value: '"json"'
+      - name: Body
+        value: |-
+          {
+              "entry": {
+                  "@name": "internet",
+
+                  "from": {
+                      "member": ["any"]
+                  },
+                  "to": {
+                      "member": ["any"]
+                  },
+                  "source": {
+                      "member": ["any"]
+                  },
+                  "destination": {
+                      "member": ["any"]
+                  },
+                  "service": {
+                      "member": ["any"]
+                  },
+                  "application": {
+                      "member": ["any"]
+                  },
+                  "action": "allow"
+              }
+          }
+    skipped: true
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $Paloalto_2
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

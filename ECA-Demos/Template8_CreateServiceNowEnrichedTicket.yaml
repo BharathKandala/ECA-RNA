@@ -1,0 +1,285 @@
+name: Template8_CreateServiceNowEnrichedTicket
+platform: node
+blocks:
+  - action: comment
+    value: Creates an incident in ServiceNow. Returns created incidents information.
+  - action: if
+    name: If_1
+    then:
+      - action: system/Cisco/Viptela/Real- Time  Monitoring -  Interface/Get Device
+          Interface
+        name: Cisco_4
+        inputs:
+          - name: authKey
+            value: '"Veeru.Vuppala@ibm.com/rtp_cisco_viptela"'
+          - name: af_type
+            value: '"ipv4"'
+          - name: deviceId
+            value: '"10.52.2.6"'
+        breakpoint: enabled
+      - action: assign
+        name: Assign_VIptela_output
+        variable: $Description
+        value: $Cisco_4.result.data
+    else:
+      - action: assign
+        name: Assign_false
+        variable: $Description
+        value: '"Incident triggered from SevOne Alert"'
+    condition: $Short_Description.includes("oper_status")
+  - name: Create_Incident
+    action: system/ServiceNow/createTable
+    inputs:
+      - name: authKey
+        value: $ServiceNow_authKey
+      - name: tableName
+        value: '''incident'''
+      - name: Table
+        value: |-
+          {
+              "caller_id": $Caller,
+              "catagory": $Category,
+              "subcatagory": $Subcatagory,
+              "cmdb_ci": $Configuration_Item,
+              "contact_type": $Contact_Type,
+              "state": $State,
+              "impact": $Impact,
+              "priority": $Priority,
+              "u_nms": "NMS",
+              "short_description": $Short_Description,
+              "description":$Description,
+              "u_system_ip_address": $IP_Address_Of_Device,
+              "work_notes": $Work_Note
+          }
+    breakpoint: enabled
+  - action: comment
+    value: Assigns and breaksdown the results
+  - name: Assign_Incident_ID
+    action: assign
+    variable: $Incident_ID
+    value: $Create_Incident.result.result.sys_id
+    breakpoint: enabled
+  - name: Assign_Incident_Number
+    action: assign
+    variable: $Incident_Number
+    value: $Create_Incident.result.result.number
+    breakpoint: enabled
+  - action: comment
+    value: URL link is generated based off of the inputs of the variables URL_Instance
+      & Incident_ID
+  - name: Assign_URL
+    action: assign
+    variable: $URL
+    value: '"https://" + $URL_Instance + ".service-now.com/nav_to.do?uri=%2Fincident.do%3Fsys_id%3D"
+      + $Incident_ID + "%26sysparm_record_target%3Dincident%26sysparm_record_row%3D1%26sysparm_record_rows%3D132%26sysparm_record_list%3DORDERBYDESCopened_at"'
+  - name: Assign_All_Output
+    action: assign
+    variable: $Debug
+    value: $Create_Incident.result
+variables:
+  - name: Caller
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"Veeru Vuppala"'
+    meta:
+      description: SN field caller_id
+  - name: Category
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+      enum:
+        - Inquiry / Help
+        - Hardware
+        - Software
+        - Network
+        - Database
+    value: '"Inquiry / Help"'
+    meta:
+      description: SN field Category defaults to none
+  - name: Subcatagory
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+      enum:
+        - None
+        - Antivirus
+        - Email
+        - Internal Application
+    value: '"Email"'
+    meta:
+      description: SN field name subcatagory
+  - name: Configuration_Item
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    meta:
+      description: SN field name cmdb_ci
+  - name: Contact_Type
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+      enum:
+        - Email
+        - Phone
+        - Self Service
+        - Walk In
+        - Endpoint Security
+        - Firewall
+        - IDS/IPS
+        - Network Monitoring
+        - SEIM
+        - Automation
+    value: '"Automation"'
+    meta:
+      description: SN field name contact_type
+  - name: State
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "-5"
+    meta:
+      description: SN field state -5 = New
+  - name: Impact
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: "2"
+    meta:
+      description: "1 - High, 2 - Medium, 3 - Low"
+  - name: Priority
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: number
+    value: "1"
+  - name: Short_Description
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '"Description of incident"'
+    meta:
+      description: Short Description
+  - name: Description
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"Long Description"'
+    meta:
+      description: Long Description
+  - name: Incident_Number
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: Incident_ID
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: URL
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: IP_Address_Of_Device
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"192.168.109.37"'
+    meta:
+      description: If single device and needs diag or reboot run
+  - name: Work_Note
+    required: false
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"Note Goes Here"'
+    meta:
+      description: Work note...
+  - name: Debug
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: ServiceNow_authKey
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"Veeru.Vuppala@ibm.com/servicenow_veeruDemo"'
+    meta:
+      description: authKey for ServiceNow
+  - name: URL_Instance
+    required: true
+    isInput: true
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"dev82050"'
+    meta:
+      description: "The name of your ServiceNow instance. pass in only the first part\
+        \ i.e: 'devXXXXX' (This is used in generating a URL)"
+  - name: sevonefield
+    required: false
+    isInput: false
+    isOutput: false
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+meta:
+  version: 5
+  description: Create an incident in ServiceNow
+  layout: flow
+  workerGroup: IBMRaleighLab

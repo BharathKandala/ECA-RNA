@@ -1,0 +1,35 @@
+name: NokiaRouterSample
+platform: node
+blocks:
+  - action: system/Common/SSH
+    name: SSH_1
+    inputs:
+      - name: authKey
+        value: '"admin/NokiaSystemJumpHost"'
+      - name: command
+        value: '`sh /home/ansible_user/execSampNtwrkCmds.sh ''show version''`'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $SSH_1
+variables:
+  - name: nwTestCmd
+    required: false
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"show version"'
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

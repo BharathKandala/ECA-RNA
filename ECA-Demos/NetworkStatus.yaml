@@ -1,0 +1,145 @@
+name: NetworkStatus
+platform: node
+blocks:
+  - action: switch
+    name: SwitchCase_1
+    expression: $networkType
+    cases:
+      - value: '"cisco"'
+        blocks:
+          - action: ./CiscoTest
+            name: Cisco
+          - action: assign
+            name: Assign_6
+            variable: $output
+            value: $Cisco
+          - action: assign
+            name: Assign_2_1
+            variable: $pingStatus
+            value: $Cisco.result.error
+          - action: system/Common/String/StringIncludes
+            name: StringIncludes_1_1
+            inputs:
+              - name: str
+                value: $pingStatus
+              - name: searchString
+                value: '"No route to host"'
+          - action: assign
+            name: Assign_5_1
+            variable: $pingStatus
+            value: $StringIncludes_1_1.result
+      - value: '"nokia"'
+        blocks:
+          - action: ./NokiaTest
+            name: Nokia
+          - action: assign
+            name: Assign_7
+            variable: $output
+            value: $Nokia
+          - action: assign
+            name: Assign_2
+            variable: $pingStatus
+            value: $Nokia.result.error
+          - action: system/Common/String/StringIncludes
+            name: StringIncludes_1
+            inputs:
+              - name: str
+                value: $pingStatus
+              - name: searchString
+                value: '"No route to host"'
+          - action: assign
+            name: Assign_5
+            variable: $pingStatus
+            value: $StringIncludes_1.result
+    default:
+      - action: assign
+        name: Assign_8
+        variable: $output
+        value: '"Please select the Network Type"'
+  - action: if
+    name: If_1
+    then:
+      - action: assign
+        name: Assign_3
+        variable: $result
+        value: '"Incident created with "'
+      - action: system/ServiceNow/createTable
+        name: ServiceNow_1
+        inputs:
+          - name: authKey
+            value: '"admin/Servicenow-auth"'
+          - name: tableName
+            value: '"incident"'
+          - name: Table
+            value: |-
+              {
+                  "short_description": $Nokia.result.error
+              }
+      - action: assign
+        name: Assign_9
+        variable: $result
+        value: $result + $ServiceNow_1.result.result.number + ". Error- " + $output.result.error
+    else:
+      - action: assign
+        name: Assign_4
+        variable: $result
+        value: $output
+      - action: assign
+        name: Assign_9_1
+        variable: $result
+        value: $result.result.result
+    condition: $pingStatus==true
+  - action: system/Common/Email
+    name: Email_1
+    inputs:
+      - name: authKey
+        value: '"admin/email"'
+      - name: from
+        value: '"support@in.ibm.com"'
+      - name: to
+        value: '"charan.vm@in.ibm.com"'
+      - name: subject
+        value: '"Status of " + $networkType + " system"'
+      - name: text
+        value: $result
+      - name: html
+        value: $result
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+  - name: networkType
+    required: true
+    isInput: true
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '"nokia"'
+  - name: output
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+  - name: pingStatus
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: string
+    value: '""'
+    meta:
+      notLogged: true
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default

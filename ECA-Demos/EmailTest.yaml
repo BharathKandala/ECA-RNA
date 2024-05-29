@@ -1,0 +1,35 @@
+name: EmailTest
+platform: node
+blocks:
+  - action: system/Common/Email
+    name: Email_1
+    inputs:
+      - name: authKey
+        value: '"admin/email"'
+      - name: from
+        value: '"admin@ibm.com"'
+      - name: to
+        value: '"charan.vm@in.ibm.com"'
+      - name: subject
+        value: '"Test"'
+      - name: text
+        value: '"test mail"'
+      - name: html
+        value: '"Hello"'
+  - action: assign
+    name: Assign_1
+    variable: $result
+    value: $Email_1
+variables:
+  - name: result
+    required: false
+    isInput: false
+    isOutput: true
+    level: INTERMEDIATE
+    type:
+      type: any
+    value: '""'
+meta:
+  version: 5
+  layout: flow
+  workerGroup: default
